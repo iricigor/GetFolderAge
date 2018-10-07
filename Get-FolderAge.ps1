@@ -9,6 +9,45 @@ class FolderAgeResult {
 
 function Get-FolderAge {
 
+    <#
+
+    .SYNOPSIS
+    Get-FolderAge returns LastModifiedDate for specified folder(s).
+
+    .DESCRIPTION
+    Get-FolderAge returns LastModifiedDate for specified folder(s).
+    Input folders can be specified as array or via pipeline, or via input file.
+    Function is intended to run on large number of big folders, i.e. in servers environment.
+
+    .INPUTS
+    [string[]]
+
+    .OUTPUTS
+    [FolderAgeResult[]]
+
+    .EXAMPLE
+    Get-FolderAge -Folder '\\server\Docs'
+    Returns last modification date of the specified folder.
+
+    .EXAMPLE
+    Get-FolderAge -Folder '\\FileServer01.Contoso.com\Users -TestSubFolders'
+    Returns last modification date for each user share on file server.
+
+    .EXAMPLE
+    Get-FolderAge -InputFile 'ShareList.txt'
+    Returns last modification date for folders listed in specified input file (one folder per line).
+
+    .LINK
+
+    .NOTES
+    NAME:       Get-FolderAge
+
+    AUTHOR:     Igor Iric, iricigor@gmail.com, github.com/iricigor
+    
+    CREATEDATE: October 2018
+
+    #>
+
     param (
 
         #
