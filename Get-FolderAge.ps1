@@ -51,16 +51,20 @@ function Get-FolderAge {
 
     PROCESS {
 
-        foreach ($F1 in $FolderName) {
-            Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach $F1" # remove this later
-            if ($FolderName.Count -gt 1) {Write-Verbose -Message "$(Get-Date -f T)   Processing $F1"}
+        foreach ($FolderEntry in $FolderName) {
+            Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach $FolderEntry" # remove this later
+            if ($FolderName.Count -gt 1) {Write-Verbose -Message "$(Get-Date -f T)   Processing $FolderEntry"}
 
-            # TODO: Add more verbose
+            if (!(Test-Path -LiteralPath $FolderEntry)) {
+                Write-Error "$FunctionName cannot find folder $FolderEntry"
+                continue
+            }
+
             if ($TestSubFolders) {
-                $FolderList = @(Get-ChildItem $F1 -Directory | Select -Expand FullName)
-                Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $F1"
+                $FolderList = @(Get-ChildItem $FolderEntry -Directory | Select -Expand FullName)
+                Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
             } else {
-                $FolderList = @($F1)
+                $FolderList = @($FolderEntry)
             }
 
             foreach ($Folder in $FolderList) {
@@ -72,7 +76,6 @@ function Get-FolderAge {
                 $i = 0
                 $queue = @($Folder)
                 $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
-                # TODO: Exit if the above fails!
 
                 while ($i -lt ($queue.Length)) {
                     # TODO: Add jump out condition above
@@ -103,11 +106,11 @@ function Get-FolderAge {
                 }
 
                 # return value
-                Write-Verbose -Message "$(Get-Date -f T)   return value for $F1"
+                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
                 New-Object FolderAgeResult -Property @{
                     Path = $Folder
                     LastWriteTime = $LastWriteTime
-                    OlderThan = ($LastWriteTime -lt $TargetDate)
+                    OlderThan = if ($TargetDate) {$LastWriteTime -gt $TargetDate} else {$null} # TODO: Define logic/naming here
                 }
 
             }

@@ -51,7 +51,7 @@ Describe "Proper $CommandName Functionality" {
 
     It 'Throws an error for non-existing folder' {
         Get-Item 'NonExistingFolder' -ea 0 | Should -Be $null
-        {Get-FolderAge -FolderName NonExistingFolder} | Should -Throw
+        {Get-FolderAge -FolderName NonExistingFolder -ea Stop} | Should -Throw
     }
 
     It 'Runs without an error for existing folder' {
