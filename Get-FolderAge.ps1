@@ -72,6 +72,7 @@ function Get-FolderAge {
                 $i = 0
                 $queue = @($Folder)
                 $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
+                # TODO: Exit if the above fails!
 
                 while ($i -lt ($queue.Length)) {
                     # TODO: Add jump out condition above
