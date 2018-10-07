@@ -80,7 +80,7 @@ function Get-FolderAge {
                     #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
                     $Children = Get-ChildItem -LiteralPath $queue[$i]
-                    $ChildLastWriteTime = $Children | Sort LastWriteTime -Descending | Select -First 1 -Expand LastWriteTime
+                    $ChildLastWriteTime = $Children | Sort-Object LastWriteTime -Descending | Select -First 1 -Expand LastWriteTime
                     if ($ChildLastWriteTime -gt $LastWriteTime) {
                         # newer modification, remember it
                         $LastWriteTime = $ChildLastWriteTime
