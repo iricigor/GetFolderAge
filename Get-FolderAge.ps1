@@ -52,16 +52,19 @@ function Get-FolderAge {
     PROCESS {
 
         foreach ($F1 in $FolderName) {
+            Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach $F1" # remove this later
             if ($FolderName.Count -gt 1) {Write-Verbose -Message "$(Get-Date -f T)   Processing $F1"}
 
             # TODO: Add more verbose
             if ($TestSubFolders) {
-                $FolderList = Get-ChildItem $F1 -Directory
+                $FolderList = @(Get-ChildItem $F1 -Directory | Select -Expand FullName)
+                Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $F1"
             } else {
                 $FolderList = @($F1)
             }
 
             foreach ($Folder in $FolderList) {
+                Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
                 
                 # processing single folder $Folder
 
@@ -72,8 +75,10 @@ function Get-FolderAge {
 
                 while ($i -lt ($queue.Length)) {
                     # TODO: Add jump out condition above
-
-                    $Children = Get-ChildItem -LiteralPath $Folder
+                    
+                    #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
+                    Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
+                    $Children = Get-ChildItem -LiteralPath $queue[$i]
                     $ChildLastWriteTime = $Children | Sort LastWriteTime -Descending | Select -First 1 -Expand LastWriteTime
                     if ($ChildLastWriteTime -gt $LastWriteTime) {
                         # newer modification, remember it
@@ -87,14 +92,17 @@ function Get-FolderAge {
                         # TODO: Add verbose here
                     } else {
                         # add sub-folders for further processing
-                        $queue += ($Children | ? PSIsContainer) 
+                        $SubFolders = $Children | ? PSIsContainer
+                        if ($SubFolders) {
+                            $queue += @($SubFolders.FullName)
+                            #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
+                        }
                     }
-                    
                     $i++
-
                 }
 
                 # return value
+                Write-Verbose -Message "$(Get-Date -f T)   return value for $F1"
                 New-Object FolderAgeResult -Property @{
                     Path = $Folder
                     LastWriteTime = $LastWriteTime
