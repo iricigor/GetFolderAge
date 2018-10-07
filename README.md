@@ -17,6 +17,13 @@ Returns last modification date for each user share on file server.
 
 Returns last modification date for folders listed in specified input file (one folder per line).
 
+# Download
+
+You can see online latest script version at this [link](https://github.com/iricigor/GetFolderAge/blob/master/Get-FolderAge.ps1).
+Raw PS1 file can be downloaded from [here](https://raw.githubusercontent.com/iricigor/GetFolderAge/master/Get-FolderAge.ps1).
+
+Script will be soon published to [PSGallery](https://www.powershellgallery.com).
+
 # Build status
 
 Each commit or PR to master is checked on [Azure DevOps](https://azure.microsoft.com/en-us/services/devops/) [Pipelines](https://azure.microsoft.com/en-us/services/devops/pipelines/) on two build systems:
