@@ -91,6 +91,10 @@ Describe "Proper $CommandName Functionality" {
         $Result2 | Should -Not -Be $null
         $Result2.LastWriteTime | Should -BeExactly $Result1.LastWriteTime
     }
+    It 'Generates file output if specified' {
+        Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile 'TestFolder\AgeResults.csv' | Out-Null
+        'TestFolder\AgeResults.csv' | Should -Exist
+    }
 
     # TODO: Test 1st level only should give different result if update deep inside
     # TODO: Test with or without days old should give different result
