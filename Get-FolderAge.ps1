@@ -22,16 +22,12 @@ function Get-FolderAge {
         [string]$InputFile,
 
         #
-        # Last copy date
-        #
-
-        [int]$ModifiedDays,
-
-        [datetime]$TargetDate,
-
-        #
         # Other parameters
         #
+
+        [string]$OutputFile, # = "Get-FolderAge.temp.$(Get-Date -f 'yyyymmdd-HHMMss').csv", # removed default value, if output wanted, it should be specified
+        [int]$ModifiedDays,
+        [datetime]$TargetDate,
 
         [switch]$QuickTest,
         [switch]$TestSubFolders
@@ -47,6 +43,8 @@ function Get-FolderAge {
             # TODO: Add error handling
             $FolderName = Get-Content -Path $InputFile
         }
+
+        $First = $true # Used for file output
     }
 
     PROCESS {
@@ -105,14 +103,27 @@ function Get-FolderAge {
                     $i++
                 }
 
+                #
                 # return value
-                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
-                New-Object FolderAgeResult -Property @{
-                    Path = $Folder
-                    LastWriteTime = $LastWriteTime
-                    OlderThan = if ($TargetDate) {$LastWriteTime -gt $TargetDate} else {$null} # TODO: Define logic/naming here
-                }
+                #
 
+                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
+                $RetVal = New-Object FolderAgeResult -Property @{
+                        Path = $Folder
+                        LastWriteTime = $LastWriteTime
+                        OlderThan = if ($TargetDate) {$LastWriteTime -gt $TargetDate} else {$null} # TODO: Define logic/naming here
+                    }
+                # File output, if needed
+                if ($OutputFile) {
+                    if ($First) {
+                        $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode
+                        $First = $false
+                    } else {
+                        $RetVal | ConvertTo-Csv | Select -Skip 1 | Out-File $OutputFile -Append -Encoding Unicode
+                    }
+                }
+                # Return to pipeline
+                $RetVal
             }
         }
     }
