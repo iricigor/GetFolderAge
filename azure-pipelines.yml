@@ -1,16 +1,68 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+resources:
 
-pool:
-  vmImage: 'Ubuntu 16.04'
+- repo: self
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+phases:
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+- phase: Phase_1
+
+  displayName: Windows Agent
+
+
+
+  condition: succeeded()
+
+  queue:
+
+    name: Hosted
+
+  steps:
+
+  - powershell: |  
+       if (!(Get-Module Pester | ? Version -ge 4.0.0)) {
+           Write-Host "`nInstalling Pester"
+           Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser -Repository PSGallery
+           Get-Module Pester -List    
+       }
+       
+       Write-Host "Run Pester tests"
+       $Result = Invoke-Pester -PassThru
+       if ($Result.failedCount -ne 0) {Write-Error "Pester returned errors"} 
+
+    displayName: 'PowerShell Script'
+
+
+
+
+
+- phase: Phase_2
+
+  displayName: Ubuntu Agent
+
+
+
+  condition: succeeded()
+
+  queue:
+
+    name: Hosted Ubuntu 1604
+
+  steps:
+
+  - powershell: |  
+       if (!(Get-Module Pester | ? Version -ge 4.0.0)) {
+           Write-Host "`nInstalling Pester"
+           Install-Module -Name Pester -Force -SkipPublisherCheck -Scope CurrentUser -Repository PSGallery
+           Get-Module Pester -List    
+       }
+       
+       Write-Host "Run Pester tests"
+       $Result = Invoke-Pester -PassThru
+       if ($Result.failedCount -ne 0) {Write-Error "Pester returned errors"} 
+
+    displayName: 'PowerShell Script'
+
+
+
+
+
