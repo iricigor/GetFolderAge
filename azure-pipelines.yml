@@ -14,7 +14,7 @@ phases:
 
   queue:
 
-    name: Hosted
+    name: Hosted Windows Container
 
   steps:
 
