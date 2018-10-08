@@ -5,6 +5,7 @@ class FolderAgeResult {
     [Nullable[boolean]]$Modified
 
     # TODO: Add something like confident bool
+    # TODO: Add some diagnostics, like folders/files processed
 }
 
 function Get-FolderAge {
@@ -51,11 +52,35 @@ function Get-FolderAge {
 
     .PARAMETER FolderName
     FolderName specifies folder which will be evaluated. Parameter accepts multiple values or pipeline input.
-    Pipeline input can be obtained for example via Get-ChildItem command.
+    Pipeline input can be obtained for example via Get-ChildItem command (see examples).
 
     .PARAMETER InputFile
     String specifying file name which contains list of folders to be processed, one folder per line.
     
+    .PARAMETER CutOffTime
+    Specifies point in time for evaluating "Modified" field in result. If not specified, field will have $null value.
+    This can speed up the script as processing will exit once first "modified" file or folder is found.
+    Date format is following standard PowerShell definition and script is not handling any additional conversion.
+    In case of issues specifying exact date, consider using -CutOffDays parameter.
+    
+    .PARAMETER CutOffDays
+    Integer specifying how many days passed since last cut off point in time.
+    With -Verbose output you can see actual point in time used for cutoff time.
+    If both CutOffTime and CutOffDays specified, script will throw an error.
+    
+    .PARAMETER OutputFile
+    String specifying file name which will be used for output. If not specified, there will be no file output generated.
+    This is specially useful for long running commands. Each folder as soon as processed will be stored in the file.
+    
+    .PARAMETER QuickTest
+    Switch which if specified will force to script to run in quick mode. Default is full depth search.
+    QuickTest means only contents of the folder itself will be evaluated, i.e. it will not do recursive scan.
+    Results may not be correct. This is useful for testing input file and network connectivity issues.
+    
+    .PARAMETER TestSubFolders
+    Instead of specifying all subfolders inside certain folder or share, you can use switch -TestSubFolders.
+    It will generate results for each subfolder inside of specified folder.
+
     .LINK
     https://github.com/iricigor/GetFolderAge
 
@@ -84,11 +109,19 @@ function Get-FolderAge {
         # Other parameters
         #
 
+        [parameter(Mandatory=$false,ValueFromPipeline=$false)]
         [string]$OutputFile,
-        [int]$CutOffDays,
-        [datetime]$CutOffTime,
 
+        [parameter(Mandatory=$false,ValueFromPipeline=$false)]
+        [int]$CutOffDays,
+
+        [parameter(Mandatory=$false,ValueFromPipeline=$false)]
+        [DateTime]$CutOffTime,
+
+        [parameter(Mandatory=$false,ValueFromPipeline=$false)]
         [switch]$QuickTest,
+
+        [parameter(Mandatory=$false,ValueFromPipeline=$false)]
         [switch]$TestSubFolders
 
     )
@@ -111,6 +144,9 @@ function Get-FolderAge {
         }
 
         # Process $CutOffDays
+        if ($CutOffDays -and $CutOffTime) {
+            Write-Verbose -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
+        }
         if (!($CutOffTime)) {
             if ($CutOffDays) {
                 $CutOffTime = (Get-Date).AddDays(-$CutOffDays)

@@ -116,8 +116,21 @@ Describe "Proper $CommandName Functionality" {
 
     # TODO: Test 1st level only should give different result if update deep inside
     # TODO: Add documentation validation test
-    
+
     It 'Cleans up test folders' {
         Remove-Item 'TestFolder' -Force -Recurse
     }
+}
+
+Describe "Proper $CommandName Documentation" {
+
+    It 'Updates documentation and finds no diff' {
+        if (!(Get-Module platyPS -List -ea 0)) {Install-Module platyPS -Force -Scope CurrentUser}
+		Import-Module platyPS
+        # update documentation
+        New-MarkdownHelp -Command Get-FolderAge -Force -OutputFolder . -wa 0
+        $diff = git diff .
+        $diff | Should -Be $null
+    }
+
 }
