@@ -14,8 +14,6 @@ Describe "Fake-Test" {
 
 
 
-Get-Command  | Should -Not -Be Null
-
 #
 # Check definition
 #
@@ -127,9 +125,10 @@ Describe "Proper $CommandName Documentation" {
     It 'Updates documentation and finds no diff' {
         if (!(Get-Module platyPS -List -ea 0)) {Install-Module platyPS -Force -Scope CurrentUser}
 		Import-Module platyPS
+        . .\Get-FolderAge.ps1 # Re-import function
         # update documentation
-        New-MarkdownHelp -Command Get-FolderAge -Force -OutputFolder . -wa 0
-        $diff = git diff .
+        New-MarkdownHelp -Command $CommandName -Force -OutputFolder . -wa 0
+        $diff = git diff .\Get-FolderAge.md
         $diff | Should -Be $null
     }
 
