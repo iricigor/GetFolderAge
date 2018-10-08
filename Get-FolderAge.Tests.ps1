@@ -120,24 +120,24 @@ Describe "Proper $CommandName Functionality" {
     }
 }
 
-Describe "Proper $CommandName Documentation" {
+# Describe "Proper $CommandName Documentation" {
 
-    $CmdDef = Get-Command -Name $CommandName -ea 0
-    $CmdFake = Get-Command -Name 'FakeCommandName' -ea 0
+#     $CmdDef = Get-Command -Name $CommandName -ea 0
+#     $CmdFake = Get-Command -Name 'FakeCommandName' -ea 0
 
-    It "Command should exist" {
-        $CmdDef | Should -Not -Be $null
-        $CmdFake | Should -Be $null
-    }
+#     It "Command should exist" {
+#         $CmdDef | Should -Not -Be $null
+#         $CmdFake | Should -Be $null
+#     }
 
-    It 'Updates documentation and finds no diff' {
-        if (!(Get-Module platyPS -List -ea 0)) {Install-Module platyPS -Force -Scope CurrentUser}
-		Import-Module platyPS
-        . .\Get-FolderAge.ps1 # Re-import function
-        # update documentation
-        New-MarkdownHelp -Command $CommandName -Force -OutputFolder . -wa 0
-        $diff = git diff .\Get-FolderAge.md
-        $diff | Should -Be $null
-    }
+#     It 'Updates documentation and finds no diff' {
+#         if (!(Get-Module platyPS -List -ea 0)) {Install-Module platyPS -Force -Scope CurrentUser}
+# 		Import-Module platyPS
+#         . .\Get-FolderAge.ps1 # Re-import function
+#         # update documentation
+#         New-MarkdownHelp -Command $CommandName -Force -OutputFolder . -wa 0
+#         $diff = git diff .\Get-FolderAge.md
+#         $diff | Should -Be $null
+#     }
 
-}
+# }
