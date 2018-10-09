@@ -1,12 +1,12 @@
-class FolderAgeResult {
+# class FolderAgeResult {
 
-    [string]$Path
-    [datetime]$LastWriteTime
-    [Nullable[boolean]]$Modified
+#     [string]$Path
+#     [datetime]$LastWriteTime
+#     [Nullable[boolean]]$Modified
 
-    # TODO: Add something like confident bool
-    # TODO: Add some diagnostics, like folders/files processed
-}
+#     # TODO: Add something like confident bool
+#     # TODO: Add some diagnostics, like folders/files processed
+# }
 
 function Get-FolderAge {
 
@@ -208,7 +208,7 @@ function Get-FolderAge {
                         # TODO: Add verbose here
                     } else {
                         # add sub-folders for further processing
-                        $SubFolders = $Children | ? PSIsContainer
+                        $SubFolders = $Children | where {$_.PSIsContainer}
                         if ($SubFolders) {
                             $queue += @($SubFolders.FullName)
                             #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
@@ -222,7 +222,7 @@ function Get-FolderAge {
                 #
 
                 Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
-                $RetVal = New-Object FolderAgeResult -Property @{
+                $RetVal = New-Object PSObject -Property @{
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
                         Modified = if ($CutOffTime) {$LastWriteTime -gt $CutOffTime} else {$null} # TODO: Define logic/naming here
