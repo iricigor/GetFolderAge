@@ -75,10 +75,10 @@ You can chat about this commandlet via [Skype](https://www.skype.com) _(no Skype
 
 If you find any problems, feel free to open a new issue.
 
-![GitHub open issues](https://img.shields.io/github/issues/badges/shields.svg?style=flat)
-![GitHub closed issues](https://img.shields.io/github/issues-closed/badges/shields.svg?style=flat)
+![GitHub open issues](https://img.shields.io/github/issues/iricigor/GetFolderAge.svg?style=flat)
+![GitHub closed issues](https://img.shields.io/github/issues-closed/iricigor/GetFolderAge.svg?style=flat)
 
 If you want to contribute, please fork the code and make a new PR after!
 
-![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg?style=flat)
-![GitHub top language](https://img.shields.io/github/languages/top/badges/shields.svg?style=flat)
+![GitHub](https://img.shields.io/github/license/iricigor/GetFolderAge.svg?style=flat)
+![GitHub top language](https://img.shields.io/github/languages/top/iricigor/GetFolderAge.svg?style=flat)
