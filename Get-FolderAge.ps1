@@ -148,7 +148,7 @@ function Get-FolderAge {
             Write-Verbose -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
         }
         if (!($CutOffTime)) {
-            if ($CutOffDays) {
+            if ($PSBoundParameters.Keys -contains 'CutOffDays') {
                 $CutOffTime = (Get-Date).AddDays(-$CutOffDays)
                 Write-Verbose -Message "$(Get-Date -f T)   setting cut off date for $CutOffTime"
             } else {
@@ -195,6 +195,8 @@ function Get-FolderAge {
                 $i = 0
                 $queue = @($Folder)
                 $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
+                $TotalFiles = 0
+                $LastItemName = $Folder
 
                 # enter loop
                 while ($i -lt ($queue.Length)) {
@@ -203,10 +205,12 @@ function Get-FolderAge {
                     #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
                     $Children = Get-ChildItem -LiteralPath $queue[$i]
-                    $ChildLastWriteTime = $Children | Sort-Object LastWriteTime -Descending | Select -First 1 -Expand LastWriteTime
-                    if ($ChildLastWriteTime -gt $LastWriteTime) {
+                    $TotalFiles += @($Children).Count
+                    $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
+                    if ($LastChild.LastWriteTime -gt $LastWriteTime) {
                         # newer modification, remember it
-                        $LastWriteTime = $ChildLastWriteTime
+                        $LastWriteTime = $LastChild.LastWriteTime
+                        $LastItemName = $LastChild.FullName
                         # TODO: Check for exit?
                     }
 
@@ -230,10 +234,21 @@ function Get-FolderAge {
                 #
 
                 Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
+                if (!$CutOffTime) {
+                    $Modified = $Confident = $null
+                } elseif ($LastWriteTime -gt $CutOffTime) {
+                    $Modified = $Confident = $true
+                } else {
+                    $Modified = $false
+                    $Confident = !($QuickTest)
+                }
                 $RetVal = New-Object PSObject -Property @{
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
-                        Modified = if ($CutOffTime) {$LastWriteTime -gt $CutOffTime} else {$null} # TODO: Define logic/naming here
+                        Modified = $Modified
+                        TotalFiles = $TotalFiles
+                        TotalFolders = $queue.Count
+                        LastItem = $LastItemName
                     }
                 # File output, if needed
                 if ($OutputFile) {

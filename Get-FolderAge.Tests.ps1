@@ -49,6 +49,7 @@ Describe "Proper $CommandName Functionality" {
 
     It 'Throws an error for non-existing folder' {
         Get-Item 'NonExistingFolder' -ea 0 | Should -Be $null
+        Get-Item 'TestFolder' -ea 0 | Should -Be $null # we will create it later, if existing tests are not valid
         {Get-FolderAge -FolderName NonExistingFolder -ea Stop} | Should -Throw
     }
 
@@ -58,11 +59,13 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Returns different value if we update test folder' {
-        $SubFolder = New-Item (Join-Path 'TestFolder' 'TestSubFolder') -ItemType Directory -Force
         $Result1 = Get-FolderAge -FolderName 'TestFolder'
-        $Result2 = Get-FolderAge -FolderName ($SubFolder.FullName)
+        Start-Sleep -Seconds 2 # not to get into strange comparison issues
+        New-Item (Join-Path 'TestFolder' 'TestSubFolder') -ItemType Directory -Force | Out-Null
+        $Result2 = Get-FolderAge -FolderName 'TestFolder'
         $Result2 | Should -Not -Be $null
         $Result2 | Should -Not -BeExactly $Result1
+        $Result2.LastWriteTime -gt $Result1.LastWriteTime | Should -Be $true
     }
 
     It 'Running with text file input should give the same result' {
@@ -107,6 +110,7 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Cutoff with 0 and 1 value should be different' {
+        Start-Sleep -Seconds 2 # as tests are running fast, we need to sleep 2 seconds for -CutOffDays 0 to do what we want
         $Result0 = Get-FolderAge -FolderName 'TestFolder' -CutOffDays 0
         $Result1 = Get-FolderAge -FolderName 'TestFolder' -CutOffDays 1
         $Result0.Modified -eq $Result1.Modified | Should -Be $false
