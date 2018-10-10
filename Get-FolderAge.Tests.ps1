@@ -112,6 +112,10 @@ Describe "Proper $CommandName Functionality" {
         $Result0.Modified -eq $Result1.Modified | Should -Be $false
     }
 
+    It 'Expands relative path' {
+        Get-FolderAge -FolderName '.' | Select -Expand Path | Should -Not -Be '.'
+    }
+
     # TODO: Test 1st level only should give different result if update deep inside
     # TODO: Add documentation validation test
 
