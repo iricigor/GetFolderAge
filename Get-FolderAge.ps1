@@ -165,6 +165,14 @@ function Get-FolderAge {
         foreach ($FolderEntry in $FolderName) {
             if ($FolderName.Count -gt 1) {Write-Verbose -Message "$(Get-Date -f T)   Processing $FolderEntry"}
 
+            $RP = Resolve-Path $FolderEntry
+            if ($RP.Provider.Name -ne 'FileSystem') {
+                Write-Error "$FunctionName provided path $FolderEntry is not on the FileSystem"
+                continue
+            } elseif ($FolderEntry -ne $RP.ProviderPath) {
+                Write-Verbose -Message "$(Get-Date -f T)   Expanding $FolderEntry to $($RP.ProviderPath) via $($RP.Provider.Name) call"
+                $FolderEntry = $RP.ProviderPath
+            }
             if (!(Test-Path -LiteralPath $FolderEntry)) {
                 # non-terminating error, we can proceed to next FolderEntry
                 Write-Error "$FunctionName cannot find folder $FolderEntry"
