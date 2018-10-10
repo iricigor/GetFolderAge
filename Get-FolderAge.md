@@ -200,7 +200,7 @@ Input can be specified in three ways:
 ## OUTPUTS
 
 ### [FolderAgeResult[]]
-Script outputs array os FolderAgeResult objects. Each object contain these properties:
+Script outputs array of FolderAgeResult objects. Each object contain these properties:
 - [string]Path - as specified in input parameters (or obtained subfolder names)
 - [DateTime]LastWriteTime - latest write time for all items inside of the folder
 - [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
