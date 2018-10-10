@@ -1,7 +1,16 @@
 # GetFolderAge
 
 PowerShell script which checks for last modified date for large number of folders.
-Script can be run in un-attended mode also.
+It checks recursively for all files and folders inside.
+
+Running a script itself will just import (i.e. create) new commandlet `Get-FolderAge` in your session. It will not do any checks.
+
+You can run this commandlet with proper parameters as in examples below.
+If you specify CutOffDate (or Days) script will exit folder search as soon as it finds modified file or folder.
+Script can be run in un-attended mode also with file output.
+
+Technical explanation of LastModifiedDate can be seen in [this archived copy](https://web.archive.org/web/20110604022236/http://support.microsoft.com/kb/299648) of MSDN article.
+
 
 # Examples
 
@@ -17,6 +26,9 @@ Returns last modification date for each user share on file server.
 
 Returns last modification date for folders listed in specified input file (one folder per line).
 
+
+For more examples and full parameter's explanation, run `Get-Help Get-FolderAge` or see the [online version](Get-FolderAge.md).
+
 # Download
 
 You can see online latest script version at this [link](https://github.com/iricigor/GetFolderAge/blob/master/Get-FolderAge.ps1).
@@ -31,3 +43,9 @@ Each commit or PR to master is checked on [Azure DevOps](https://azure.microsoft
 1. **Windows** Container running Windows PowerShell v.5.1
 
 [![Build Status](https://dev.azure.com/iiric/GetFolderAge/_apis/build/status/GetFolderAge-CI)](https://dev.azure.com/iiric/GetFolderAge/_build/latest?definitionId=5)
+
+# Support
+
+You can chat about this commandlet via Skype, by clicking a link below.
+
+[![chat on Skype](https://img.shields.io/badge/chat-on%20Skype-blue.svg)](https://join.skype.com/hQMRyp7kwjd2)
