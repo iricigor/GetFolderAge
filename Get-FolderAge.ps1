@@ -157,6 +157,7 @@ function Get-FolderAge {
         }
 
         $First = $true # Used if there is output to file, only first line drops header
+        $Separator = [IO.Path]::DirectorySeparatorChar
     }
 
 
@@ -249,6 +250,7 @@ function Get-FolderAge {
                         TotalFiles = $TotalFiles
                         TotalFolders = $queue.Count
                         LastItem = $LastItemName
+                        Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
                     }
                 # File output, if needed
                 if ($OutputFile) {
