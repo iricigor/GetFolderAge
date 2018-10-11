@@ -49,6 +49,7 @@ Describe "Proper $CommandName Functionality" {
 
     It 'Throws an error for non-existing folder' {
         Get-Item 'NonExistingFolder' -ea 0 | Should -Be $null
+        Get-Item 'TestFolder' -ea 0 | Should -Be $null # we will create it later, if existing tests are not valid
         {Get-FolderAge -FolderName NonExistingFolder -ea Stop} | Should -Throw
     }
 
@@ -58,11 +59,13 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Returns different value if we update test folder' {
-        $SubFolder = New-Item (Join-Path 'TestFolder' 'TestSubFolder') -ItemType Directory -Force
         $Result1 = Get-FolderAge -FolderName 'TestFolder'
-        $Result2 = Get-FolderAge -FolderName ($SubFolder.FullName)
+        Start-Sleep -Seconds 2 # not to get into strange comparison issues
+        New-Item (Join-Path 'TestFolder' 'TestSubFolder') -ItemType Directory -Force | Out-Null
+        $Result2 = Get-FolderAge -FolderName 'TestFolder'
         $Result2 | Should -Not -Be $null
         $Result2 | Should -Not -BeExactly $Result1
+        $Result2.LastWriteTime -gt $Result1.LastWriteTime | Should -Be $true
     }
 
     It 'Running with text file input should give the same result' {
@@ -97,8 +100,9 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Generates file output if specified' {
-        Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile 'TestFolder\AgeResults.csv' | Out-Null
-        'TestFolder\AgeResults.csv' | Should -Exist
+        $OutputFile = Join-Path 'TestFolder' 'AgeResults.csv'
+        Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile $OutputFile | Out-Null
+        $OutputFile | Should -Exist
     }
 
     It 'Cutoff should add Modified result' {
@@ -107,6 +111,7 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Cutoff with 0 and 1 value should be different' {
+        Start-Sleep -Seconds 2 # as tests are running fast, we need to sleep 2 seconds for -CutOffDays 0 to do what we want
         $Result0 = Get-FolderAge -FolderName 'TestFolder' -CutOffDays 0
         $Result1 = Get-FolderAge -FolderName 'TestFolder' -CutOffDays 1
         $Result0.Modified -eq $Result1.Modified | Should -Be $false
@@ -116,15 +121,29 @@ Describe "Proper $CommandName Functionality" {
         Get-FolderAge -FolderName '.' | Select -Expand Path | Should -Not -Be '.'
     }
 
-    # TODO: Test 1st level only should give different result if update deep inside
-    # TODO: Add documentation validation test
+    It 'Quick test does not search all files' {
+        New-Item -Path (Join-Path 'TestFolder' 'TestSubFolder2') -Name 'DeepFile.txt' -ItemType File -Force | Out-Null
+        $Result0 = Get-FolderAge -FolderName 'TestFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -QuickTest
+        $Result0.TotalFiles -gt $Result1.TotalFiles | Should -Be $true -Because "$($Result0.TotalFiles) and $($Result1.TotalFiles) should not be the same"
+    }
+
+    It 'Exits as soon as it finds modified file' {
+        $Result0 = Get-FolderAge -FolderName 'TestFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -CutOffDays 1
+        $Result0.TotalFiles -gt $Result1.TotalFiles | Should -Be $true -Because "$($Result0.TotalFiles) and $($Result1.TotalFiles) should not be the same"
+    }
 
     It 'Cleans up test folders' {
         Remove-Item 'TestFolder' -Force -Recurse
     }
+
 }
 
-# Describe "Proper $CommandName Documentation" {
+
+    # TODO: Add documentation validation test, it fails online only!
+
+    # Describe "Proper $CommandName Documentation" {
 
 #     $CmdDef = Get-Command -Name $CommandName -ea 0
 #     $CmdFake = Get-Command -Name 'FakeCommandName' -ea 0

@@ -33,7 +33,8 @@ function Get-FolderAge {
     - [string]Path - as specified in input parameters (or obtained subfolder names)
     - [DateTime]LastWriteTime - latest write time for all items inside of the folder
     - [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
-
+    It also outputs diagnostic/statistics info which can be seen in full help.
+    
     .EXAMPLE
     Get-FolderAge -Folder '\\server\Docs'
     Returns last modification date of the specified folder.
@@ -148,7 +149,7 @@ function Get-FolderAge {
             Write-Verbose -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
         }
         if (!($CutOffTime)) {
-            if ($CutOffDays) {
+            if ($PSBoundParameters.Keys -contains 'CutOffDays') {
                 $CutOffTime = (Get-Date).AddDays(-$CutOffDays)
                 Write-Verbose -Message "$(Get-Date -f T)   setting cut off date for $CutOffTime"
             } else {
@@ -157,6 +158,7 @@ function Get-FolderAge {
         }
 
         $First = $true # Used if there is output to file, only first line drops header
+        $Separator = [IO.Path]::DirectorySeparatorChar
     }
 
 
@@ -195,25 +197,44 @@ function Get-FolderAge {
                 $i = 0
                 $queue = @($Folder)
                 $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
+                $TotalFiles = 0
+                $LastItemName = $Folder
+                $KeepProcessing = $true
 
-                # enter loop
-                while ($i -lt ($queue.Length)) {
-                    # TODO: Add jump out condition above
+                #
+                # main non-recursive loop
+                #
+
+                while ($KeepProcessing -and ($i -lt ($queue.Length))) {
                     
                     #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
                     $Children = Get-ChildItem -LiteralPath $queue[$i]
-                    $ChildLastWriteTime = $Children | Sort-Object LastWriteTime -Descending | Select -First 1 -Expand LastWriteTime
-                    if ($ChildLastWriteTime -gt $LastWriteTime) {
+                    $TotalFiles += @($Children).Count
+                    
+                    # check LastWriteTime
+                    $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
+                    if ($LastChild.LastWriteTime -gt $LastWriteTime) {
                         # newer modification, remember it
-                        $LastWriteTime = $ChildLastWriteTime
-                        # TODO: Check for exit?
+                        $LastWriteTime = $LastChild.LastWriteTime
+                        $LastItemName = $LastChild.FullName
+                        # Check for exit?
+                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
+                    }
+                    # check CreateTime
+                    $LastChild = $Children | Sort-Object CreateTime -Descending | Select -First 1
+                    if ($LastChild.CreateTime -gt $LastWriteTime) {
+                        # newer modification, remember it
+                        $LastWriteTime = $LastChild.CreateTime
+                        $LastItemName = $LastChild.FullName
+                        # Check for exit?
+                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                     }
 
-                    # TODO: If quick check, we add children only if $i = 0
-                    if ($QuickTest -and ($i -gt 0)) {
+                    # If quick check, we add children only if $i = 0
+                    if ($QuickTest) {
                         # skip adding children
-                        # TODO: Add verbose here
+                        Write-Verbose -Message "$(Get-Date -f T)   not processing subfolders due to -QuickTest switch"
                     } else {
                         # add sub-folders for further processing
                         $SubFolders = $Children | where {$_.PSIsContainer}
@@ -230,10 +251,23 @@ function Get-FolderAge {
                 #
 
                 Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
+                if (!$CutOffTime) {
+                    $Modified = $Confident = $null
+                } elseif ($LastWriteTime -gt $CutOffTime) {
+                    $Modified = $Confident = $true
+                } else {
+                    $Modified = $false
+                    $Confident = !($QuickTest)
+                }
                 $RetVal = New-Object PSObject -Property @{
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
-                        Modified = if ($CutOffTime) {$LastWriteTime -gt $CutOffTime} else {$null} # TODO: Define logic/naming here
+                        Modified = $Modified
+                        Confident = $Confident
+                        TotalFiles = $TotalFiles
+                        TotalFolders = $queue.Count
+                        LastItem = $LastItemName
+                        Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
                     }
                 # File output, if needed
                 if ($OutputFile) {

@@ -41,6 +41,16 @@ Input can be specified in three ways:
 * via pipeline - the same values as above can be passed via pipeline, see example with Get-ChildItem
 * parameter -InputFile - a file specifying folders to be processed, one folder per line
 
+### Cut-off Date explanation
+
+Cut-off date represents the point in time for which we want to know if a folder was modified after.
+Usually this is the date when last copy or backup or sync was performed on given folder.
+
+It can be specified as:
+
+* PowerShell [DateTime] object, i.e. the value returned by Get-Date command
+* Integer number representing days since last cut-off date (easier, but less precise)
+
 ### Output format
 
 Script outputs array of FolderAgeResult objects. Each object contain these properties:
@@ -48,6 +58,14 @@ Script outputs array of FolderAgeResult objects. Each object contain these prope
 * [string]Path - as specified in input parameters (or obtained subfolder names)
 * [DateTime]LastWriteTime - latest write time for all items inside of the folder
 * [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
+
+It also outputs diagnostic/statistics info:
+
+* [bool]Confident - if Modified return value is confident result, in case script is called with QuickTest switch, return value for Modified might not be correct. This does not apply to LastWriteTime.
+* [int]TotalFiles - total number of files and directories scanned
+* [int]TotalFolders - total number of directories scanned
+* [string]LastItem - item with latest timestamp found (note that this might not ber really the latest modified file. If this timestamp is newer than CutOffDate, script will not search further.
+* [int]Depth - total depth of scanned folders relative to initial folder. If QuickTest, then it will be 1, regardless of real depth. If CutOffDate specified, it might not go to full depth, so this number will be smaller than full depth.
 
 ## Download
 
@@ -61,7 +79,7 @@ Script will be soon published to [PSGallery](https://www.powershellgallery.com).
 Each commit or PR to master is checked on [Azure DevOps](https://azure.microsoft.com/en-us/services/devops/) [Pipelines](https://azure.microsoft.com/en-us/services/devops/pipelines/) on two build systems:
 
 1. Ubuntu **Linux** v.16.04 running PowerShell (Core) v.6.1
-1. **Windows** Container running Windows PowerShell v.5.1
+2. **Windows** Container running Windows PowerShell v.5.1
 
 [![Build Status](https://dev.azure.com/iiric/GetFolderAge/_apis/build/status/GetFolderAge-CI)](https://dev.azure.com/iiric/GetFolderAge/_build/latest?definitionId=5)
 
