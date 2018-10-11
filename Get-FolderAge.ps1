@@ -4,8 +4,6 @@
 #     [datetime]$LastWriteTime
 #     [Nullable[boolean]]$Modified
 
-#     # TODO: Add something like confident bool
-#     # TODO: Add some diagnostics, like folders/files processed
 # }
 
 function Get-FolderAge {
