@@ -15,9 +15,11 @@ Technical explanation of LastModifiedDate can be seen in [this archived copy](ht
 
 ## Help and Examples
 
+![Screenshot 1](img/Screenshot_1.jpg)
+
 ### Details
 
-For more examples and full parameter's explanation, run `Get-Help Get-FolderAge` or see the [online version](Get-FolderAge.md).
+For more examples and full parameter's explanation, run `Get-Help Get-FolderAge -Full` or see the [online version](Get-FolderAge.md).
 
 ### Examples
 
@@ -29,17 +31,19 @@ Returns last modification date of the specified folder.
 
 Returns last modification date for each user share on file server.
 
-* `Get-FolderAge -InputFile 'ShareList.txt'`
+* `Get-FolderAge -InputFile 'ShareList.txt' -OutputFile 'ShareScanResults.csv' -CutoffDays 3`
 
-Returns last modification date for folders listed in specified input file (one folder per line).
+Tests if folders listed in specified input file (one folder per line) are modified since "cut-off" 3 days ago. Results are saved to file in csv format.
 
 ### Input parameters
 
 Input can be specified in three ways:
 
-* parameter -FolderName _(default parameter, can be omitted)_ followed by string or an array of strings specifying paths to be checked
-* via pipeline - the same values as above can be passed via pipeline, see example with Get-ChildItem
-* parameter -InputFile - a file specifying folders to be processed, one folder per line
+* parameter `-FolderName` _(default parameter, can be omitted)_ followed by string or an array of strings specifying paths to be checked
+* via pipeline - the same values as above can be passed via pipeline, see example with `Get-ChildItem`
+* parameter `-InputFile` - a file specifying folders to be processed, one folder per line
+
+![Screenshot 2](img/Screenshot_2.png)
 
 ### Cut-off Date explanation
 
@@ -55,17 +59,19 @@ It can be specified as:
 
 Script outputs array of FolderAgeResult objects. Each object contain these properties:
 
-* [string]Path - as specified in input parameters (or obtained subfolder names)
-* [DateTime]LastWriteTime - latest write time for all items inside of the folder
-* [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
+* [string]`Path` - as specified in input parameters (or obtained subfolder names)
+* [DateTime]`LastWriteTime` - latest write time for all items inside of the folder
+* [bool]`Modified` - if folder was modified since last cut-off date (or null if date not given)
 
 It also outputs diagnostic/statistics info:
 
-* [bool]Confident - if Modified return value is confident result, in case script is called with QuickTest switch, return value for Modified might not be correct. This does not apply to LastWriteTime.
-* [int]TotalFiles - total number of files and directories scanned
-* [int]TotalFolders - total number of directories scanned
-* [string]LastItem - item with latest timestamp found (note that this might not ber really the latest modified file. If this timestamp is newer than CutOffDate, script will not search further.
-* [int]Depth - total depth of scanned folders relative to initial folder. If QuickTest, then it will be 1, regardless of real depth. If CutOffDate specified, it might not go to full depth, so this number will be smaller than full depth.
+* [bool]`Confident` - if Modified return value is confident result, in case script is called with QuickTest switch, return value for Modified might not be correct. This does not apply to LastWriteTime.
+* [int]`TotalFiles` - total number of files and directories scanned
+* [int]`TotalFolders` - total number of directories scanned
+* [string]`LastItem` - item with latest timestamp found (note that this might not ber really the latest modified file. If this timestamp is newer than CutOffDate, script will not search further.
+* [int]`Depth` - total depth of scanned folders relative to initial folder. If QuickTest, then it will be 1, regardless of real depth. If CutOffDate specified, it might not go to full depth, so this number will be smaller than full depth.
+* [decimal]`ElapsedSeconds` - time spent in checking the folder
+* [DateTime]`FinishTime` - date and time when folder check was completed
 
 ## Download
 
