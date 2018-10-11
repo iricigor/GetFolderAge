@@ -199,27 +199,39 @@ function Get-FolderAge {
                 $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
                 $TotalFiles = 0
                 $LastItemName = $Folder
+                $KeepProcessing = $true
 
                 #
                 # main non-recursive loop
                 #
 
-                while ($i -lt ($queue.Length)) {
-                    # TODO: Add jump out condition above
+                while ($KeepProcessing -and ($i -lt ($queue.Length))) {
                     
                     #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
                     $Children = Get-ChildItem -LiteralPath $queue[$i]
                     $TotalFiles += @($Children).Count
+                    
+                    # check LastWriteTime
                     $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
                     if ($LastChild.LastWriteTime -gt $LastWriteTime) {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.LastWriteTime
                         $LastItemName = $LastChild.FullName
-                        # TODO: Check for exit?
+                        # Check for exit?
+                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
+                    }
+                    # check CreateTime
+                    $LastChild = $Children | Sort-Object CreateTime -Descending | Select -First 1
+                    if ($LastChild.CreateTime -gt $LastWriteTime) {
+                        # newer modification, remember it
+                        $LastWriteTime = $LastChild.CreateTime
+                        $LastItemName = $LastChild.FullName
+                        # Check for exit?
+                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                     }
 
-                    # TODO: If quick check, we add children only if $i = 0
+                    # If quick check, we add children only if $i = 0
                     if ($QuickTest) {
                         # skip adding children
                         Write-Verbose -Message "$(Get-Date -f T)   not processing subfolders due to -QuickTest switch"
