@@ -209,11 +209,10 @@ function Get-FolderAge {
                     
                     #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
-                    if (($queue[$i].Length -gt 250) -and ($queue[$i] -notmatch ([regex]::Escape('\\?\')))) {
+                    if (($queue[$i].Length -gt 250) -and ($queue[$i] -notmatch ([regex]::Escape('\\?\'))) -and (!($IsLinux))) {
                         # too long path, append unicode prefix
                         $queue[$i] = '\\?\' + $queue[$i]
-                        # TODO: Make this Windows only
-                        # TODO: Add variable Unicode prefix, remove it in $RetVal below
+                        # TODO: Add variable Unicode prefix, remove it in results within $RetVal below
                     }
                     $Children = Get-ChildItem -LiteralPath $queue[$i]
                     $TotalFiles += @($Children).Count
