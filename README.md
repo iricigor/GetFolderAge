@@ -27,7 +27,7 @@ For more examples and full parameter's explanation, run `Get-Help Get-FolderAge 
 
 Returns last modification date of the specified folder.
 
-* `Get-FolderAge -Folder '\\FileServer01.Contoso.com\Users -TestSubFolders'`
+* `Get-FolderAge -Folder '\\FileServer01.Contoso.com\Users' -TestSubFolders`
 
 Returns last modification date for each user share on file server.
 
