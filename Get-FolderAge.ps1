@@ -272,10 +272,11 @@ function Get-FolderAge {
                 # File output, if needed
                 if ($OutputFile) {
                     if ($First) {
-                        $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode
+                        $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
+                        Write-Verbose -Message ("$OutputFile`:`n$((Get-Content $OutputFile) -join "`n")")
                         $First = $false
                     } else {
-                        $RetVal | ConvertTo-Csv | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
+                        $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
                     }
                 }
                 # Return to pipeline
