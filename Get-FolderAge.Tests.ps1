@@ -100,8 +100,9 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Generates file output if specified' {
-        Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile 'TestFolder\AgeResults.csv' | Out-Null
-        'TestFolder\AgeResults.csv' | Should -Exist
+        $OutputFile = Join-Path 'TestFolder' 'AgeResults.csv'
+        Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile $OutputFile | Out-Null
+        $OutputFile | Should -Exist
     }
 
     It 'Cutoff should add Modified result' {
@@ -120,15 +121,29 @@ Describe "Proper $CommandName Functionality" {
         Get-FolderAge -FolderName '.' | Select -Expand Path | Should -Not -Be '.'
     }
 
-    # TODO: Test 1st level only should give different result if update deep inside
-    # TODO: Add documentation validation test
+    It 'Quick test does not search all files' {
+        New-Item -Path (Join-Path 'TestFolder' 'TestSubFolder2') -Name 'DeepFile.txt' -ItemType File -Force | Out-Null
+        $Result0 = Get-FolderAge -FolderName 'TestFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -QuickTest
+        $Result0.TotalFiles -gt $Result1.TotalFiles | Should -Be $true -Because "$($Result0.TotalFiles) and $($Result1.TotalFiles) should not be the same"
+    }
+
+    It 'Exits as soon as it finds modified file' {
+        $Result0 = Get-FolderAge -FolderName 'TestFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -CutOffDays 1
+        $Result0.TotalFiles -gt $Result1.TotalFiles | Should -Be $true -Because "$($Result0.TotalFiles) and $($Result1.TotalFiles) should not be the same"
+    }
 
     It 'Cleans up test folders' {
         Remove-Item 'TestFolder' -Force -Recurse
     }
+
 }
 
-# Describe "Proper $CommandName Documentation" {
+
+    # TODO: Add documentation validation test, it fails online only!
+
+    # Describe "Proper $CommandName Documentation" {
 
 #     $CmdDef = Get-Command -Name $CommandName -ea 0
 #     $CmdFake = Get-Command -Name 'FakeCommandName' -ea 0

@@ -33,7 +33,8 @@ function Get-FolderAge {
     - [string]Path - as specified in input parameters (or obtained subfolder names)
     - [DateTime]LastWriteTime - latest write time for all items inside of the folder
     - [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
-
+    It also outputs diagnostic/statistics info which can be seen in full help.
+    
     .EXAMPLE
     Get-FolderAge -Folder '\\server\Docs'
     Returns last modification date of the specified folder.
@@ -199,7 +200,10 @@ function Get-FolderAge {
                 $TotalFiles = 0
                 $LastItemName = $Folder
 
-                # enter loop
+                #
+                # main non-recursive loop
+                #
+
                 while ($i -lt ($queue.Length)) {
                     # TODO: Add jump out condition above
                     
@@ -216,9 +220,9 @@ function Get-FolderAge {
                     }
 
                     # TODO: If quick check, we add children only if $i = 0
-                    if ($QuickTest -and ($i -gt 0)) {
+                    if ($QuickTest) {
                         # skip adding children
-                        # TODO: Add verbose here
+                        Write-Verbose -Message "$(Get-Date -f T)   not processing subfolders due to -QuickTest switch"
                     } else {
                         # add sub-folders for further processing
                         $SubFolders = $Children | where {$_.PSIsContainer}
@@ -247,6 +251,7 @@ function Get-FolderAge {
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
                         Modified = $Modified
+                        Confident = $Confident
                         TotalFiles = $TotalFiles
                         TotalFolders = $queue.Count
                         LastItem = $LastItemName

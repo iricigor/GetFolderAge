@@ -66,7 +66,7 @@ Then this list is passed via pipeline to Get-FolderAge
 ### -FolderName
 FolderName specifies folder which will be evaluated.
 Parameter accepts multiple values or pipeline input.
-Pipeline input can be obtained for example via Get-ChildItem command.
+Pipeline input can be obtained for example via Get-ChildItem command (see examples).
 
 ```yaml
 Type: String[]
@@ -204,6 +204,7 @@ Script outputs array of FolderAgeResult objects. Each object contain these prope
 - [string]Path - as specified in input parameters (or obtained subfolder names)
 - [DateTime]LastWriteTime - latest write time for all items inside of the folder
 - [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
+It also outputs diagnostic/statistics info which can be seen in full help.
 
 ## NOTES
 NAME:       Get-FolderAge
