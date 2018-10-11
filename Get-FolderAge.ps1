@@ -159,6 +159,7 @@ function Get-FolderAge {
 
         $First = $true # Used if there is output to file, only first line drops header
         $Separator = [IO.Path]::DirectorySeparatorChar
+        $UC = '\\?\'
     }
 
 
@@ -194,6 +195,7 @@ function Get-FolderAge {
                 # processing single folder $Folder
 
                 # initialize loop
+                $StartTime = Get-Date
                 $i = 0
                 $queue = @($Folder)
                 $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
@@ -209,10 +211,8 @@ function Get-FolderAge {
                     
                     #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
-                    if (($queue[$i].Length -gt 250) -and ($queue[$i] -notmatch ([regex]::Escape('\\?\'))) -and (!($IsLinux))) {
-                        # too long path, append unicode prefix
-                        $queue[$i] = '\\?\' + $queue[$i]
-                        # TODO: Add variable Unicode prefix, remove it in results within $RetVal below
+                    if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
+                        $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
                     }
                     $Children = Get-ChildItem -LiteralPath $queue[$i]
                     $TotalFiles += @($Children).Count
@@ -264,6 +264,11 @@ function Get-FolderAge {
                     $Modified = $false
                     $Confident = !($QuickTest)
                 }
+                # normalize paths
+                if ($LastItemName.StartsWith($UC)) {$LastItemName = $LastItemName.Replace($UC,'')} 
+                if ($queue[$i-1].StartsWith($UC)) {$queue[$i-1] = $queue[$i-1].Replace($UC,'')}
+                $EndTime = Get-Date
+
                 $RetVal = New-Object PSObject -Property @{
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
@@ -273,12 +278,14 @@ function Get-FolderAge {
                         TotalFolders = $queue.Count
                         LastItem = $LastItemName
                         Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
+                        ElapsedSeconds = ($EndTime - $StartTime).TotalSeconds
+                        FinishTime = $EndTime
                     }
                 # File output, if needed
                 if ($OutputFile) {
                     if ($First) {
                         $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
-                        Write-Verbose -Message ("$OutputFile`:`n$((Get-Content $OutputFile) -join "`n")")
+                        Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
                         $First = $false
                     } else {
                         $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
