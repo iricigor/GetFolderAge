@@ -8,8 +8,9 @@ It will not do any checks.
 You can afterwards run this commandlet with proper parameters as in examples below.
 
 Running script with specifying only a folder name will return last modification time of that folder.
-If you specify CutOffDate (or Days) script will determine if folder was modified after that time. It will exit folder search as soon as it finds modified file or folder.
-Script can be run in un-attended mode also with file output.
+If you specify `-CutOffDate` (or `-CutoffDays`) script will determine if folder was modified after that time. It will exit folder search as soon as it finds modified file or folder.
+
+Script can be run in un-attended mode also with file output using `-OutputFileName` parameter. Output format is comma-separated value, so file extension should be `.csv`.
 
 Technical explanation of LastModifiedDate can be seen in [this archived copy](https://web.archive.org/web/20110604022236/http://support.microsoft.com/kb/299648) of Microsoft knowledge base article.
 
@@ -60,18 +61,20 @@ It can be specified as:
 Script outputs array of FolderAgeResult objects. Each object contain these properties:
 
 * [string]`Path` - as specified in input parameters (or obtained subfolder names)
-* [DateTime]`LastWriteTime` - latest write time for all items inside of the folder
+* [datetime]`LastWriteTime` - latest write time for all items inside of the folder
 * [bool]`Modified` - if folder was modified since last cut-off date (or null if date not given)
 
 It also outputs diagnostic/statistics info:
 
-* [bool]`Confident` - if Modified return value is confident result, in case script is called with QuickTest switch, return value for Modified might not be correct. This does not apply to LastWriteTime.
+* [bool]`Confident` - if Modified return value is confident result, in case script is called with QuickTest switch, return value for Modified might not be correct.
 * [int]`TotalFiles` - total number of files and directories scanned
 * [int]`TotalFolders` - total number of directories scanned
 * [string]`LastItem` - item with latest timestamp found (note that this might not ber really the latest modified file. If this timestamp is newer than CutOffDate, script will not search further.
 * [int]`Depth` - total depth of scanned folders relative to initial folder. If QuickTest, then it will be 1, regardless of real depth. If CutOffDate specified, it might not go to full depth, so this number will be smaller than full depth.
 * [decimal]`ElapsedSeconds` - time spent in checking the folder
-* [DateTime]`FinishTime` - date and time when folder check was completed
+* [datetime]`FinishTime` - date and time when folder check was completed
+* [bool]`Errors` - indicate if command encountered errors during its execution (i.e. Access Denied on part of the files)
+* [string]`LastError` - text of the last encountered error
 
 ## Download
 

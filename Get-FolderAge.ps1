@@ -11,27 +11,38 @@ function Get-FolderAge {
     <#
 
     .SYNOPSIS
-    Get-FolderAge returns LastModifiedDate for specified folder(s).
+    Get-FolderAge returns `LastModifiedDate` for a specified folder(s) and if folders were modified after a specified cut-off date.
 
     .DESCRIPTION
-    Get-FolderAge returns LastModifiedDate for specified folder(s).
-    Input folders can be specified as array or via pipeline, or via input file.
-    Function is intended to run on large number of big folders, i.e. in servers environment.
+    Get-FolderAge returns LastModifiedDate for a specified folder(s) and if folders were modified after a specified cut-off date.
+    Input folders can be specified as an array or via pipeline, or via input file.
+    The function is intended to run on a large number of big/huge folders, i.e. in file servers environment.
 
     .INPUTS
     [string[]]
     Input can be specified in three ways:
     - parameter -FolderName followed by string or an array of strings specifying paths to be checked
-    - via pipeline - the same values as above can be passed via pipeline, see example with Get-ChildItem
+    - via pipeline - the same values as above can be passed via pipeline, see the example with Get-ChildItem
     - parameter -InputFile - a file specifying folders to be processed, one folder per line
 
     .OUTPUTS
     [FolderAgeResult[]]
+    
     Script outputs array of FolderAgeResult objects. Each object contain these properties:
-    - [string]Path - as specified in input parameters (or obtained subfolder names)
-    - [DateTime]LastWriteTime - latest write time for all items inside of the folder
-    - [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
-    It also outputs diagnostic/statistics info which can be seen in full help.
+    - [string] Path - as specified in input parameters (or obtained subfolder names)
+    - [DateTime] LastWriteTime - the latest write time for all items inside of the folder
+    - [bool] Modified - if folder was modified since last cut-off date (or null if date not given)
+
+    It also outputs diagnostic/statistics info:
+    - [bool] Confident - if Modified return value is confident result, in case script is called with QuickTest switch, return value for Modified might not be correct. This does not apply to LastWriteTime.
+    - [int] TotalFiles - total number of files and directories scanned
+    - [int] TotalFolders - total number of directories scanned
+    - [string] LastItem - item with latest timestamp found (note that this might not ber really the latest modified file. If this timestamp is newer than CutOffDate, script will not search further.
+    - [int] Depth - total depth of scanned folders relative to initial folder. If QuickTest, then it will be 1, regardless of real depth. If CutOffDate specified, it might not go to full depth, so this number will be smaller than full depth.
+    - [decimal]  ElapsedSeconds - time spent in checking the folder
+    - [DateTime] FinishTime - date and time when folder check was completed
+    - [bool] Errors - indicate if command encountered errors during its execution (i.e. Access Denied on part of the files)
+    - [string] LastError - text of the last encountered error
     
     .EXAMPLE
     Get-FolderAge -Folder '\\server\Docs'
@@ -42,43 +53,43 @@ function Get-FolderAge {
     Returns last modification date for each user share on file server.
 
     .EXAMPLE
-    Get-FolderAge -InputFile 'ShareList.txt'
-    Returns last modification date for folders listed in specified input file (one folder per line).
+    Get-FolderAge -InputFile 'ShareList.txt' -OutputFile 'ShareScanResults.csv' -CutoffDays 3
+    Tests if folders listed in specified input file (one folder per line) are modified since "cut-off" 3 days ago. Results are saved to file in csv format.
 
     .EXAMPLE
     Get-ChildItem \\server\share | ? Name -like 'User*' | Get-FolderAge
     Obtains list of folders and filters it by name. Then this list is passed via pipeline to Get-FolderAge
 
     .PARAMETER FolderName
-    FolderName specifies folder which will be evaluated. Parameter accepts multiple values or pipeline input.
+    FolderName specifies the folder which will be evaluated. Parameter accepts multiple values or pipeline input.
     Pipeline input can be obtained for example via Get-ChildItem command (see examples).
 
     .PARAMETER InputFile
-    String specifying file name which contains list of folders to be processed, one folder per line.
+    String specifying file name which contains a list of folders to be processed, one folder per line.
     
     .PARAMETER CutOffTime
-    Specifies point in time for evaluating "Modified" field in result. If not specified, field will have $null value.
+    Specifies a point in time for evaluating "Modified" field in the result. If not specified, the field will have $null value.
     This can speed up the script as processing will exit once first "modified" file or folder is found.
     Date format is following standard PowerShell definition and script is not handling any additional conversion.
-    In case of issues specifying exact date, consider using -CutOffDays parameter.
+    In case of issues specifying an exact date, consider using -CutOffDays parameter.
     
     .PARAMETER CutOffDays
-    Integer specifying how many days passed since last cut off point in time.
+    An integer specifying how many days passed since the last cut off point in time.
     With -Verbose output you can see actual point in time used for cutoff time.
-    If both CutOffTime and CutOffDays specified, script will throw an error.
+    If both CutOffTime and CutOffDays specified, the script will throw a warning.
     
     .PARAMETER OutputFile
-    String specifying file name which will be used for output. If not specified, there will be no file output generated.
-    This is specially useful for long running commands. Each folder as soon as processed will be stored in the file.
+    A string specifying file name which will be used for output. If not specified, there will be no file output generated.
+    This is especially useful for long running commands. Each folder as soon as processed will be stored in the file.
     
     .PARAMETER QuickTest
-    Switch which if specified will force to script to run in quick mode. Default is full depth search.
-    QuickTest means only contents of the folder itself will be evaluated, i.e. it will not do recursive scan.
-    Results may not be correct. This is useful for testing input file and network connectivity issues.
+    Switch which if specified will force to script to run in quick mode. The default is full depth search.
+    QuickTest means only contents of the folder itself will be evaluated, i.e. it will not do full depth scan.
+    Results in this case may not be correct. This is useful for testing input file and network connectivity issues.
     
     .PARAMETER TestSubFolders
-    Instead of specifying all subfolders inside certain folder or share, you can use switch -TestSubFolders.
-    It will generate results for each subfolder inside of specified folder.
+    Instead of specifying all subfolders inside certain folder or share, you can use the switch -TestSubFolders.
+    It will generate results for each subfolder inside of the specified folder.
 
     .LINK
     https://github.com/iricigor/GetFolderAge
@@ -86,7 +97,7 @@ function Get-FolderAge {
     .NOTES
     NAME:       Get-FolderAge
 
-    AUTHOR:     Igor Iric, iricigor@gmail.com, github.com/iricigor
+    AUTHOR:     Igor Iric, iricigor@gmail.com, https://github.com/iricigor
     
     CREATEDATE: October 2018
 
@@ -139,12 +150,14 @@ function Get-FolderAge {
             $FolderName = Get-Content -Path $InputFile -ErrorAction SilentlyContinue
             if ($FolderName) {
                 Write-Verbose -Message "$(Get-Date -f T)   successfully read $InputFile with $(@($FolderName).Count) entries"
+            } else {
+                throw "$FunctionName cannot read content of input file $InputFile, check if file is readable and not empty."
             }            
         }
 
         # Process $CutOffDays
         if ($CutOffDays -and $CutOffTime) {
-            Write-Verbose -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
+            Write-Warning -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
         }
         if (!($CutOffTime)) {
             if ($PSBoundParameters.Keys -contains 'CutOffDays') {
@@ -166,6 +179,11 @@ function Get-FolderAge {
         foreach ($FolderEntry in $FolderName) {
             if ($FolderName.Count -gt 1) {Write-Verbose -Message "$(Get-Date -f T)   Processing $FolderEntry"}
 
+            if (!(Test-Path -LiteralPath $FolderEntry)) {
+                # non-terminating error, we can proceed to next FolderEntry
+                Write-Error "$FunctionName cannot find folder $FolderEntry"
+                continue
+            }
             $RP = Resolve-Path $FolderEntry
             if ($RP.Provider.Name -ne 'FileSystem') {
                 Write-Error "$FunctionName provided path $FolderEntry is not on the FileSystem"
@@ -174,21 +192,22 @@ function Get-FolderAge {
                 Write-Verbose -Message "$(Get-Date -f T)   Expanding $FolderEntry to $($RP.ProviderPath) via $($RP.Provider.Name) call"
                 $FolderEntry = $RP.ProviderPath
             }
-            if (!(Test-Path -LiteralPath $FolderEntry)) {
-                # non-terminating error, we can proceed to next FolderEntry
-                Write-Error "$FunctionName cannot find folder $FolderEntry"
-                continue
-            }
 
             if ($TestSubFolders) {
-                $FolderList = @(Get-ChildItem $FolderEntry -Directory | Select -Expand FullName)
-                Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
+                $FolderList = @(Get-ChildItem $FolderEntry -Directory -ea SilentlyContinue | Select -Expand FullName)
+                if ($FolderList) {
+                    Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
+                } else {
+                    Write-Error "$FunctionName cannot find subfolders from $FolderEntry"
+                    continue
+                }
+                
             } else {
                 $FolderList = @($FolderEntry)
             }
 
             foreach ($Folder in $FolderList) {
-                Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
+                Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
                 
                 # processing single folder $Folder
 
@@ -200,36 +219,46 @@ function Get-FolderAge {
                 $TotalFiles = 0
                 $LastItemName = $Folder
                 $KeepProcessing = $true
+                $ErrorsFound = $false
+                $LastError = $null
 
                 #
+                #
                 # main non-recursive loop
+                #
                 #
 
                 while ($KeepProcessing -and ($i -lt ($queue.Length))) {
                     
-                    #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
+                    Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
                     if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
                         $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
                     }
-                    $Children = Get-ChildItem -LiteralPath $queue[$i]
+                    $Children = Get-ChildItem -LiteralPath $queue[$i] -ErrorAction SilentlyContinue -ErrorVariable ErrVar
+                    if ($ErrVar) {
+                        $ErrorsFound = $true
+                        $LastError = [string]$ErrVar
+                    }
                     $TotalFiles += @($Children).Count
                     
                     # check LastWriteTime
                     $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
-                    if ($LastChild.LastWriteTime -gt $LastWriteTime) {
+                    if ($LastChild.LastWriteTime -and ($LastChild.LastWriteTime -gt $LastWriteTime)) {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.LastWriteTime
                         $LastItemName = $LastChild.FullName
+                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry $LastItemName"
                         # Check for exit?
                         if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                     }
                     # check CreateTime
                     $LastChild = $Children | Sort-Object CreateTime -Descending | Select -First 1
-                    if ($LastChild.CreateTime -gt $LastWriteTime) {
+                    if ($LastChild.CreateTime -and ($LastChild.CreateTime -gt $LastWriteTime)) {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.CreateTime
                         $LastItemName = $LastChild.FullName
+                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry (by create time) $LastItemName"
                         # Check for exit?
                         if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                     }
@@ -243,30 +272,34 @@ function Get-FolderAge {
                         $SubFolders = $Children | where {$_.PSIsContainer}
                         if ($SubFolders) {
                             $queue += @($SubFolders.FullName)
-                            #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
+                            Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while new queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
                         }
                     }
                     $i++
                 }
 
                 #
+                #
                 # return value
                 #
+                #
 
-                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
+                Write-Debug -Message "$(Get-Date -f T)   preparing return value for $Folder"
                 if (!$CutOffTime) {
                     $Modified = $Confident = $null
                 } elseif ($LastWriteTime -gt $CutOffTime) {
-                    $Modified = $Confident = $true
+                    $Modified = $true
+                    $Confident = !($ErrorsFound)
                 } else {
                     $Modified = $false
-                    $Confident = !($QuickTest)
+                    $Confident = (!($QuickTest)) -and (!($ErrorsFound))
                 }
                 # normalize paths
                 if ($LastItemName.StartsWith($UC)) {$LastItemName = $LastItemName.Replace($UC,'')} 
                 if ($queue[$i-1].StartsWith($UC)) {$queue[$i-1] = $queue[$i-1].Replace($UC,'')}
                 $EndTime = Get-Date
 
+                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
                 $RetVal = New-Object PSObject -Property @{
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
@@ -278,15 +311,27 @@ function Get-FolderAge {
                         Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
                         ElapsedSeconds = ($EndTime - $StartTime).TotalSeconds
                         FinishTime = $EndTime
+                        Errors = $ErrorsFound
+                        LastError = $LastError
                     }
                 # File output, if needed
                 if ($OutputFile) {
                     if ($First) {
-                        $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
-                        Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
-                        $First = $false
+                        try {
+                            $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
+                            Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
+                            $First = $false
+                        } catch {
+                            Write-Error "$FunctionName failed while writing to $OutputFile, file output is skipped"
+                            $OutputFile = $null
+                        }
                     } else {
-                        $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
+                        try {
+                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
+                            Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
+                        } catch {
+                            Write-Error "$FunctionName failed to append date to $OutputFile, entry for $Folder will be skipped.`n$_"
+                        }
                     }
                 }
                 # Return to pipeline

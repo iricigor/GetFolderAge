@@ -1,14 +1,14 @@
 ---
 external help file:
 Module Name:
-online version: https://github.com/iricigor/GetFolderAge
+online version: https://github.com/iricigor/GetFolderAge/blob/master/Get-FolderAge.md
 schema: 2.0.0
 ---
 
 # Get-FolderAge
 
 ## SYNOPSIS
-Get-FolderAge returns LastModifiedDate for specified folder(s).
+Get-FolderAge returns \`LastModifiedDate\` for a specified folder(s) and if folders were modified after a specified cut-off date.
 
 ## SYNTAX
 
@@ -25,10 +25,10 @@ Get-FolderAge -InputFile <String> [-OutputFile <String>] [-CutOffDays <Int32>] [
 ```
 
 ## DESCRIPTION
-Get-FolderAge returns LastModifiedDate for specified folder(s).
-Input folders can be specified as array or via pipeline, or via input file.
-Function is intended to run on large number of big folders, i.e.
-in servers environment.
+Get-FolderAge returns LastModifiedDate for a specified folder(s) and if folders were modified after a specified cut-off date.
+Input folders can be specified as an array or via pipeline, or via input file.
+The function is intended to run on a large number of big/huge folders, i.e.
+in file servers environment.
 
 ## EXAMPLES
 
@@ -48,10 +48,11 @@ Returns last modification date for each user share on file server.
 
 ### EXAMPLE 3
 ```
-Get-FolderAge -InputFile 'ShareList.txt'
+Get-FolderAge -InputFile 'ShareList.txt' -OutputFile 'ShareScanResults.csv' -CutoffDays 3
 ```
 
-Returns last modification date for folders listed in specified input file (one folder per line).
+Tests if folders listed in specified input file (one folder per line) are modified since "cut-off" 3 days ago.
+Results are saved to file in csv format.
 
 ### EXAMPLE 4
 ```
@@ -64,7 +65,7 @@ Then this list is passed via pipeline to Get-FolderAge
 ## PARAMETERS
 
 ### -FolderName
-FolderName specifies folder which will be evaluated.
+FolderName specifies the folder which will be evaluated.
 Parameter accepts multiple values or pipeline input.
 Pipeline input can be obtained for example via Get-ChildItem command (see examples).
 
@@ -81,7 +82,7 @@ Accept wildcard characters: False
 ```
 
 ### -InputFile
-String specifying file name which contains list of folders to be processed, one folder per line.
+String specifying file name which contains a list of folders to be processed, one folder per line.
 
 ```yaml
 Type: String
@@ -96,9 +97,9 @@ Accept wildcard characters: False
 ```
 
 ### -OutputFile
-String specifying file name which will be used for output.
+A string specifying file name which will be used for output.
 If not specified, there will be no file output generated.
-This is specially useful for long running commands.
+This is especially useful for long running commands.
 Each folder as soon as processed will be stored in the file.
 
 ```yaml
@@ -114,9 +115,9 @@ Accept wildcard characters: False
 ```
 
 ### -CutOffDays
-Integer specifying how many days passed since last cut off point in time.
+An integer specifying how many days passed since the last cut off point in time.
 With -Verbose output you can see actual point in time used for cutoff time.
-If both CutOffTime and CutOffDays specified, script will throw an error.
+If both CutOffTime and CutOffDays specified, the script will throw a warning.
 
 ```yaml
 Type: Int32
@@ -131,11 +132,11 @@ Accept wildcard characters: False
 ```
 
 ### -CutOffTime
-Specifies point in time for evaluating "Modified" field in result.
-If not specified, field will have $null value.
+Specifies a point in time for evaluating "Modified" field in the result.
+If not specified, the field will have $null value.
 This can speed up the script as processing will exit once first "modified" file or folder is found.
 Date format is following standard PowerShell definition and script is not handling any additional conversion.
-In case of issues specifying exact date, consider using -CutOffDays parameter.
+In case of issues specifying an exact date, consider using -CutOffDays parameter.
 
 ```yaml
 Type: DateTime
@@ -151,10 +152,10 @@ Accept wildcard characters: False
 
 ### -QuickTest
 Switch which if specified will force to script to run in quick mode.
-Default is full depth search.
+The default is full depth search.
 QuickTest means only contents of the folder itself will be evaluated, i.e.
-it will not do recursive scan.
-Results may not be correct.
+it will not do full depth scan.
+Results in this case may not be correct.
 This is useful for testing input file and network connectivity issues.
 
 ```yaml
@@ -170,8 +171,8 @@ Accept wildcard characters: False
 ```
 
 ### -TestSubFolders
-Instead of specifying all subfolders inside certain folder or share, you can use switch -TestSubFolders.
-It will generate results for each subfolder inside of specified folder.
+Instead of specifying all subfolders inside certain folder or share, you can use the switch -TestSubFolders.
+It will generate results for each subfolder inside of the specified folder.
 
 ```yaml
 Type: SwitchParameter
@@ -192,24 +193,33 @@ For more information, see about_CommonParameters (http://go.microsoft.com/fwlink
 ## INPUTS
 
 ### [string[]]
-Input can be specified in three ways:
-- parameter -FolderName followed by string or an array of strings specifying paths to be checked
-- via pipeline - the same values as above can be passed via pipeline, see example with Get-ChildItem
-- parameter -InputFile - a file specifying folders to be processed, one folder per line
+
+### Input can be specified in three ways:
+
+### - parameter -FolderName followed by string or an array of strings specifying paths to be checked
+
+### - via pipeline - the same values as above can be passed via pipeline, see the example with Get-ChildItem
+
+### - parameter -InputFile - a file specifying folders to be processed, one folder per line
 
 ## OUTPUTS
 
 ### [FolderAgeResult[]]
-Script outputs array of FolderAgeResult objects. Each object contain these properties:
-- [string]Path - as specified in input parameters (or obtained subfolder names)
-- [DateTime]LastWriteTime - latest write time for all items inside of the folder
-- [bool]Modified - if folder was modified since last cut-off date (or null if date not given)
-It also outputs diagnostic/statistics info which can be seen in full help.
+
+### Script outputs array of FolderAgeResult objects. Each object contain these properties:
+
+### - [string]   Path          - as specified in input parameters (or obtained subfolder names)
+
+### - [DateTime] LastWriteTime - the latest write time for all items inside of the folder
+
+### - [bool]     Modified      - if folder was modified since last cut-off date (or null if date not given)
+
+### It also outputs diagnostic/statistics info which can be seen online.
 
 ## NOTES
 NAME:       Get-FolderAge
 
-AUTHOR:     Igor Iric, iricigor@gmail.com, github.com/iricigor
+AUTHOR:     Igor Iric, iricigor@gmail.com, https://github.com/iricigor
 
 CREATEDATE: October 2018
 
