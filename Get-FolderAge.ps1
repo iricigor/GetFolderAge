@@ -29,7 +29,7 @@ function Get-FolderAge {
     [FolderAgeResult[]]
     Script outputs array of FolderAgeResult objects. Each object contain these properties:
     - [string]   Path          - as specified in input parameters (or obtained subfolder names)
-    - [DateTime] LastWriteTime - latest write time for all items inside of the folder
+    - [DateTime] LastWriteTime - the latest write time for all items inside of the folder
     - [bool]     Modified      - if folder was modified since last cut-off date (or null if date not given)
     It also outputs diagnostic/statistics info which can be seen online.
     
@@ -86,7 +86,7 @@ function Get-FolderAge {
     .NOTES
     NAME:       Get-FolderAge
 
-    AUTHOR:     Igor Iric, iricigor@gmail.com, github.com/iricigor
+    AUTHOR:     Igor Iric, iricigor@gmail.com, https://github.com/iricigor
     
     CREATEDATE: October 2018
 
