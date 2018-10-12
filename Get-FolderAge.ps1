@@ -139,6 +139,8 @@ function Get-FolderAge {
             $FolderName = Get-Content -Path $InputFile -ErrorAction SilentlyContinue
             if ($FolderName) {
                 Write-Verbose -Message "$(Get-Date -f T)   successfully read $InputFile with $(@($FolderName).Count) entries"
+            } else {
+                throw "$FunctionName cannot read content of input file $InputFile, check if file is readable and not empty."
             }            
         }
 
@@ -166,6 +168,11 @@ function Get-FolderAge {
         foreach ($FolderEntry in $FolderName) {
             if ($FolderName.Count -gt 1) {Write-Verbose -Message "$(Get-Date -f T)   Processing $FolderEntry"}
 
+            if (!(Test-Path -LiteralPath $FolderEntry)) {
+                # non-terminating error, we can proceed to next FolderEntry
+                Write-Error "$FunctionName cannot find folder $FolderEntry"
+                continue
+            }
             $RP = Resolve-Path $FolderEntry
             if ($RP.Provider.Name -ne 'FileSystem') {
                 Write-Error "$FunctionName provided path $FolderEntry is not on the FileSystem"
@@ -174,15 +181,16 @@ function Get-FolderAge {
                 Write-Verbose -Message "$(Get-Date -f T)   Expanding $FolderEntry to $($RP.ProviderPath) via $($RP.Provider.Name) call"
                 $FolderEntry = $RP.ProviderPath
             }
-            if (!(Test-Path -LiteralPath $FolderEntry)) {
-                # non-terminating error, we can proceed to next FolderEntry
-                Write-Error "$FunctionName cannot find folder $FolderEntry"
-                continue
-            }
 
             if ($TestSubFolders) {
-                $FolderList = @(Get-ChildItem $FolderEntry -Directory | Select -Expand FullName)
-                Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
+                $FolderList = @(Get-ChildItem $FolderEntry -Directory -ea SilentlyContinue | Select -Expand FullName)
+                if ($FolderList) {
+                    Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
+                } else {
+                    Write-Error "$FunctionName cannot find subfolders from $FolderEntry"
+                    continue
+                }
+                
             } else {
                 $FolderList = @($FolderEntry)
             }
@@ -212,12 +220,12 @@ function Get-FolderAge {
                     if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
                         $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
                     }
-                    $Children = Get-ChildItem -LiteralPath $queue[$i]
+                    $Children = Get-ChildItem -LiteralPath $queue[$i] # TODO: Handle Errors!
                     $TotalFiles += @($Children).Count
                     
                     # check LastWriteTime
                     $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
-                    if ($LastChild.LastWriteTime -gt $LastWriteTime) {
+                    if ($LastChild.LastWriteTime -and ($LastChild.LastWriteTime -gt $LastWriteTime)) {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.LastWriteTime
                         $LastItemName = $LastChild.FullName
@@ -227,7 +235,7 @@ function Get-FolderAge {
                     }
                     # check CreateTime
                     $LastChild = $Children | Sort-Object CreateTime -Descending | Select -First 1
-                    if ($LastChild.CreateTime -gt $LastWriteTime) {
+                    if ($LastChild.CreateTime -and ($LastChild.CreateTime -gt $LastWriteTime)) {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.CreateTime
                         $LastItemName = $LastChild.FullName
@@ -285,12 +293,21 @@ function Get-FolderAge {
                 # File output, if needed
                 if ($OutputFile) {
                     if ($First) {
-                        $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
-                        Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
-                        $First = $false
+                        try {
+                            $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
+                            Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
+                            $First = $false
+                        } catch {
+                            Write-Error "$FunctionName failed while writing to $OutputFile, file output is skipped"
+                            $OutputFile = $null
+                        }
                     } else {
-                        $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
-                        Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
+                        try {
+                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
+                            Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
+                        } catch {
+                            Write-Error "$FunctionName failed to append date to $OutputFile, entry for $Folder will be skipped.`n$_"
+                        }
                     }
                 }
                 # Return to pipeline

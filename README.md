@@ -8,8 +8,9 @@ It will not do any checks.
 You can afterwards run this commandlet with proper parameters as in examples below.
 
 Running script with specifying only a folder name will return last modification time of that folder.
-If you specify CutOffDate (or Days) script will determine if folder was modified after that time. It will exit folder search as soon as it finds modified file or folder.
-Script can be run in un-attended mode also with file output.
+If you specify `-CutOffDate` (or `-CutoffDays`) script will determine if folder was modified after that time. It will exit folder search as soon as it finds modified file or folder.
+
+Script can be run in un-attended mode also with file output using `-OutputFileName` parameter. Output format is comma-separated value, so file extension should be `.csv`.
 
 Technical explanation of LastModifiedDate can be seen in [this archived copy](https://web.archive.org/web/20110604022236/http://support.microsoft.com/kb/299648) of Microsoft knowledge base article.
 
