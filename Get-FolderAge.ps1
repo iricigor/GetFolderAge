@@ -144,7 +144,7 @@ function Get-FolderAge {
 
         # Process $CutOffDays
         if ($CutOffDays -and $CutOffTime) {
-            Write-Verbose -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
+            Write-Warning -Message "$(Get-Date -f T)   $FunctionName has -CutOffTime specified, ignoring CutOffDays."
         }
         if (!($CutOffTime)) {
             if ($PSBoundParameters.Keys -contains 'CutOffDays') {
@@ -188,7 +188,7 @@ function Get-FolderAge {
             }
 
             foreach ($Folder in $FolderList) {
-                Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
+                Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
                 
                 # processing single folder $Folder
 
@@ -207,7 +207,7 @@ function Get-FolderAge {
 
                 while ($KeepProcessing -and ($i -lt ($queue.Length))) {
                     
-                    #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
+                    Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
                     Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
                     if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
                         $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
@@ -221,6 +221,7 @@ function Get-FolderAge {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.LastWriteTime
                         $LastItemName = $LastChild.FullName
+                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry $LastItemName"
                         # Check for exit?
                         if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                     }
@@ -230,6 +231,7 @@ function Get-FolderAge {
                         # newer modification, remember it
                         $LastWriteTime = $LastChild.CreateTime
                         $LastItemName = $LastChild.FullName
+                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry (by create time) $LastItemName"
                         # Check for exit?
                         if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                     }
@@ -243,7 +245,7 @@ function Get-FolderAge {
                         $SubFolders = $Children | where {$_.PSIsContainer}
                         if ($SubFolders) {
                             $queue += @($SubFolders.FullName)
-                            #Write-Verbose -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
+                            Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while new queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
                         }
                     }
                     $i++
@@ -253,7 +255,7 @@ function Get-FolderAge {
                 # return value
                 #
 
-                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
+                Write-Debug -Message "$(Get-Date -f T)   preparing return value for $Folder"
                 if (!$CutOffTime) {
                     $Modified = $Confident = $null
                 } elseif ($LastWriteTime -gt $CutOffTime) {
@@ -267,6 +269,7 @@ function Get-FolderAge {
                 if ($queue[$i-1].StartsWith($UC)) {$queue[$i-1] = $queue[$i-1].Replace($UC,'')}
                 $EndTime = Get-Date
 
+                Write-Verbose -Message "$(Get-Date -f T)   return value for $Folder"
                 $RetVal = New-Object PSObject -Property @{
                         Path = $Folder
                         LastWriteTime = $LastWriteTime
@@ -287,6 +290,7 @@ function Get-FolderAge {
                         $First = $false
                     } else {
                         $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
+                        Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
                     }
                 }
                 # Return to pipeline
