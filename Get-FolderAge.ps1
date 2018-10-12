@@ -208,9 +208,13 @@ function Get-FolderAge {
                 $TotalFiles = 0
                 $LastItemName = $Folder
                 $KeepProcessing = $true
+                $ErrorsFound = $false
+                $LastError = $null
 
                 #
+                #
                 # main non-recursive loop
+                #
                 #
 
                 while ($KeepProcessing -and ($i -lt ($queue.Length))) {
@@ -220,7 +224,11 @@ function Get-FolderAge {
                     if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
                         $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
                     }
-                    $Children = Get-ChildItem -LiteralPath $queue[$i] # TODO: Handle Errors!
+                    $Children = Get-ChildItem -LiteralPath $queue[$i] -ErrorAction SilentlyContinue -ErrorVariable ErrVar
+                    if ($ErrVar) {
+                        $ErrorsFound = $true
+                        $LastError = [string]$ErrVar
+                    }
                     $TotalFiles += @($Children).Count
                     
                     # check LastWriteTime
@@ -260,17 +268,20 @@ function Get-FolderAge {
                 }
 
                 #
+                #
                 # return value
+                #
                 #
 
                 Write-Debug -Message "$(Get-Date -f T)   preparing return value for $Folder"
                 if (!$CutOffTime) {
                     $Modified = $Confident = $null
                 } elseif ($LastWriteTime -gt $CutOffTime) {
-                    $Modified = $Confident = $true
+                    $Modified = $true
+                    $Confident = !($ErrorsFound)
                 } else {
                     $Modified = $false
-                    $Confident = !($QuickTest)
+                    $Confident = (!($QuickTest)) -and (!($ErrorsFound))
                 }
                 # normalize paths
                 if ($LastItemName.StartsWith($UC)) {$LastItemName = $LastItemName.Replace($UC,'')} 
@@ -289,6 +300,8 @@ function Get-FolderAge {
                         Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
                         ElapsedSeconds = ($EndTime - $StartTime).TotalSeconds
                         FinishTime = $EndTime
+                        Errors = $ErrorsFound
+                        LastError = $LastError
                     }
                 # File output, if needed
                 if ($OutputFile) {
