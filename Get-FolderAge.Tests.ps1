@@ -143,7 +143,7 @@ Describe "Proper $CommandName Functionality" {
 
     # TODO: Add documentation validation test, it fails online only!
 
-    Describe "Proper $CommandName Documentation" {
+Describe "Proper $CommandName Documentation" {
 
     $CmdDef = Get-Command -Name $CommandName -ea 0
     $CmdFake = Get-Command -Name 'FakeCommandName' -ea 0
@@ -154,7 +154,8 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Updates documentation and finds no diff' {
-        New-MarkdownHelp -Command $CommandName -Force -OutputFolder . -wa 0
+        #New-MarkdownHelp -Command $CommandName -Force -OutputFolder . -wa 0
+        Update-MarkdownHelp -Path '.\Get-FolderAge.md' -WA 0 | Out-Null
         $diff = git diff .\Get-FolderAge.md
         $diff | Should -Be $null
     }
