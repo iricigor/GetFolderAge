@@ -6,7 +6,7 @@
 
 # }
 
-function Get-FolderAge {
+function Global:Get-FolderAge {
 
     <#
 
