@@ -228,7 +228,6 @@ function Get-FolderAge {
                 $KeepProcessing = $true
                 $ErrorsFound = $false
                 $LastError = $null
-                $TDisk = $TMem = $TSort = 0
 
                 #
                 #
@@ -238,7 +237,6 @@ function Get-FolderAge {
 
                 while ($KeepProcessing -and ($i -lt ($queue.Length))) {
                     
-                    $TT = get-date
                     $Current = $queue[$i]
                     Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $Current)"
                     if ($ProgressBar) {
@@ -253,10 +251,8 @@ function Get-FolderAge {
                         $LastError = [string]$ErrVar
                     }
                     $TotalFiles += @($Children).Count
-                    $TDisk += ((get-date)-$TT).TotalMilliseconds
                     
                     # check LastWriteTime
-                    $TT = get-date
                     $Children | % {
                         if (($_.LastWriteTime -gt $LastWriteTime) -or ($_.CreationTime -gt $LastWriteTime)) {
                             $LastItemName = $_.FullName
@@ -266,9 +262,7 @@ function Get-FolderAge {
                             if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                         }
                     }
-                    $TSort += ((get-date)-$TT).TotalMilliseconds
 
-                    $TT = get-date
                     # If quick check, we add children only if $i = 0
                     if ($QuickTest) {
                         # skip adding children
@@ -283,7 +277,6 @@ function Get-FolderAge {
                         }
                     }
                     $i++
-                    $TMem += ((get-date)-$TT).TotalMilliseconds
                 }
 
                 #
@@ -321,9 +314,6 @@ function Get-FolderAge {
                         FinishTime = $EndTime
                         Errors = $ErrorsFound
                         LastError = $LastError
-                        TimeDisk = $TDisk
-                        TimeMem = $TMem
-                        TimeSort = $TSort
                     }
                 # File output, if needed
                 if ($OutputFile) {
