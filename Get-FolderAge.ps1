@@ -253,24 +253,14 @@ function Get-FolderAge {
                     
                     # check LastWriteTime
                     $TT = get-date
-                    $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
-                    if ($LastChild.LastWriteTime -and ($LastChild.LastWriteTime -gt $LastWriteTime)) {
-                        # newer modification, remember it
-                        $LastWriteTime = $LastChild.LastWriteTime
-                        $LastItemName = $LastChild.FullName
-                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry $LastItemName"
-                        # Check for exit?
-                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
-                    }
-                    # check CreateTime
-                    $LastChild = $Children | Sort-Object CreateTime -Descending | Select -First 1
-                    if ($LastChild.CreateTime -and ($LastChild.CreateTime -gt $LastWriteTime)) {
-                        # newer modification, remember it
-                        $LastWriteTime = $LastChild.CreateTime
-                        $LastItemName = $LastChild.FullName
-                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry (by create time) $LastItemName"
-                        # Check for exit?
-                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
+                    $Children | % {
+                        if (($_.LastWriteTime -gt $LastWriteTime) -or ($_.CreationTime -gt $LastWriteTime)) {
+                            $LastItemName = $_.FullName
+                            $LastWriteTime = if ($_.LastWriteTime -gt $_.CreationTime) {$_.LastWriteTime} else {$_.CreationTime}
+                            Write-Debug -Message "$(Get-Date -f T)   remembered newer entry $LastItemName"
+                            # Check for exit?
+                            if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
+                        }
                     }
                     $TSort += ((get-date)-$TT).TotalMilliseconds
 
