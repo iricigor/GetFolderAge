@@ -132,7 +132,10 @@ function Get-FolderAge {
         [switch]$QuickTest,
 
         [parameter(Mandatory=$false,ValueFromPipeline=$false)]
-        [switch]$TestSubFolders
+        [switch]$TestSubFolders,
+
+        [parameter(Mandatory=$false,ValueFromPipeline=$false)]
+        [switch]$ProgressBar
 
     )
 
@@ -221,6 +224,7 @@ function Get-FolderAge {
                 $KeepProcessing = $true
                 $ErrorsFound = $false
                 $LastError = $null
+                $TDisk = $TMem = $TSort = 0
 
                 #
                 #
@@ -230,39 +234,37 @@ function Get-FolderAge {
 
                 while ($KeepProcessing -and ($i -lt ($queue.Length))) {
                     
-                    Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $($queue[$i])"
-                    Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $queue[$i]
-                    if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
-                        $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
+                    $TT = get-date
+                    $Current = $queue[$i]
+                    Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $Current)"
+                    if ($ProgressBar) {
+                        Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $Current
                     }
-                    $Children = Get-ChildItem -LiteralPath $queue[$i] -Force -ErrorAction SilentlyContinue -ErrorVariable ErrVar
+                    if (($Current.Length -gt 250) -and (!($Current.StartsWith($UC))) -and (!($IsLinux))) {
+                        $Current = $UC + $Current  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
+                    }
+                    $Children = Get-ChildItem -LiteralPath $Current -Force -ErrorAction SilentlyContinue -ErrorVariable ErrVar
                     if ($ErrVar) {
                         $ErrorsFound = $true
                         $LastError = [string]$ErrVar
                     }
                     $TotalFiles += @($Children).Count
+                    $TDisk += ((get-date)-$TT).TotalMilliseconds
                     
                     # check LastWriteTime
-                    $LastChild = $Children | Sort-Object LastWriteTime -Descending | Select -First 1
-                    if ($LastChild.LastWriteTime -and ($LastChild.LastWriteTime -gt $LastWriteTime)) {
-                        # newer modification, remember it
-                        $LastWriteTime = $LastChild.LastWriteTime
-                        $LastItemName = $LastChild.FullName
-                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry $LastItemName"
-                        # Check for exit?
-                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
+                    $TT = get-date
+                    $Children | % {
+                        if (($_.LastWriteTime -gt $LastWriteTime) -or ($_.CreationTime -gt $LastWriteTime)) {
+                            $LastItemName = $_.FullName
+                            $LastWriteTime = if ($_.LastWriteTime -gt $_.CreationTime) {$_.LastWriteTime} else {$_.CreationTime}
+                            Write-Debug -Message "$(Get-Date -f T)   remembered newer entry $LastItemName"
+                            # Check for exit?
+                            if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
+                        }
                     }
-                    # check CreateTime
-                    $LastChild = $Children | Sort-Object CreateTime -Descending | Select -First 1
-                    if ($LastChild.CreateTime -and ($LastChild.CreateTime -gt $LastWriteTime)) {
-                        # newer modification, remember it
-                        $LastWriteTime = $LastChild.CreateTime
-                        $LastItemName = $LastChild.FullName
-                        Write-Debug -Message "$(Get-Date -f T)   remembered newer entry (by create time) $LastItemName"
-                        # Check for exit?
-                        if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
-                    }
+                    $TSort += ((get-date)-$TT).TotalMilliseconds
 
+                    $TT = get-date
                     # If quick check, we add children only if $i = 0
                     if ($QuickTest) {
                         # skip adding children
@@ -272,10 +274,12 @@ function Get-FolderAge {
                         $SubFolders = $Children | where {$_.PSIsContainer}
                         if ($SubFolders) {
                             $queue += @($SubFolders.FullName)
+                            # we can use List instead of Array for $queue, but we are not spending much time on this operation anyway
                             Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while new queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
                         }
                     }
                     $i++
+                    $TMem += ((get-date)-$TT).TotalMilliseconds
                 }
 
                 #
@@ -313,6 +317,9 @@ function Get-FolderAge {
                         FinishTime = $EndTime
                         Errors = $ErrorsFound
                         LastError = $LastError
+                        TimeDisk = $TDisk
+                        TimeMem = $TMem
+                        TimeSort = $TSort
                     }
                 # File output, if needed
                 if ($OutputFile) {
