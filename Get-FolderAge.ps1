@@ -91,6 +91,10 @@ function Get-FolderAge {
     Instead of specifying all subfolders inside certain folder or share, you can use the switch -TestSubFolders.
     It will generate results for each subfolder inside of the specified folder.
 
+    .PARAMETER ProgressBar
+    Script can displays standard PowerShell progress bar showing current processed folder and percent of completion.
+    Be aware that this can prolong running time.
+
     .LINK
     https://github.com/iricigor/GetFolderAge
 
