@@ -235,7 +235,7 @@ function Get-FolderAge {
                     if (($queue[$i].Length -gt 250) -and (!($queue[$i].StartsWith($UC))) -and (!($IsLinux))) {
                         $queue[$i] = $UC + $queue[$i]  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
                     }
-                    $Children = Get-ChildItem -LiteralPath $queue[$i] -ErrorAction SilentlyContinue -ErrorVariable ErrVar
+                    $Children = Get-ChildItem -LiteralPath $queue[$i] -Force -ErrorAction SilentlyContinue -ErrorVariable ErrVar
                     if ($ErrVar) {
                         $ErrorsFound = $true
                         $LastError = [string]$ErrVar
