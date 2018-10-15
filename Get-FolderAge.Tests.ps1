@@ -141,7 +141,8 @@ Describe "V2 Compatibility check for $CommandName" {
     # it should be possible at least on local test environment
 
     try {
-        powershell -version 2 Write-Host 'Hello World'
+        powershell -version 2  -NoProfile -NonInteractive -NoLogo -Command Write-Host Hello!
+        if ($LASTEXITCODE) {throw 'PowerShell v.2 failed!'}
         # if above OK, proceed with test
         it 'runs v2 properly' {
             # import function and run function on the current folder; we just care not to throw an error
