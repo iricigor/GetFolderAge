@@ -134,14 +134,32 @@ Describe "Proper $CommandName Functionality" {
         $Result0.TotalFiles -gt $Result1.TotalFiles | Should -Be $true -Because "$($Result0.TotalFiles) and $($Result1.TotalFiles) should not be the same"
     }
 
-    It 'Cleans up test folders' {
-        Remove-Item 'TestFolder' -Force -Recurse
-    }
-
 }
 
+Describe "V2 Compatibility check for $CommandName" {
+    # this tes runs only if there is powershell version 2 installed
+    # it should be possible at least on local test environment
 
-    # TODO: Add documentation validation test, it fails online only!
+    try {
+        powershell -version 2 Write-Host 'Hello World'
+        # if above OK, proceed with test
+        it 'runs v2 properly' {
+            # import function and run function on the current folder; we just care not to throw an error
+            {PowerShell -Version 2 -NoProfile -NonInteractive -NoLogo -Command ". .\Get-FolderAge.ps1; Get-FolderAge ."} | Should -Not -Throw
+        }
+
+        it 'running v2 gives the same result' {
+            $ResultV5 = Get-FolderAge -FolderName .
+            PowerShell -Version 2 -NoProfile -NonInteractive -NoLogo -Command ". .\Get-FolderAge.ps1; Get-FolderAge . -OutputFile .\TestFolder\V2.csv"
+            $ResultV2 = Import-Csv 'TestFolder\V2.csv'
+            #$ResultV2.LastWriteTime -eq $ResultV5.LastWriteTime | Should -Be $true # it can be false because of formatting to/from csv
+            $ResultV2.TotalFiles -eq $ResultV5.TotalFiles | Should -Be $true
+        }
+
+    } catch {
+        # skip test as v2 cannot be run
+    }
+}
 
 Describe "Proper $CommandName Documentation" {
 
@@ -158,6 +176,14 @@ Describe "Proper $CommandName Documentation" {
         Update-MarkdownHelp -Path '.\Get-FolderAge.md' -WA 0 | Out-Null
         $diff = git diff .\Get-FolderAge.md
         $diff | Should -Be $null
+    }
+
+}
+
+Describe "Clean after $CommandName testing" {
+
+    It 'Cleans up test folders' {
+        Remove-Item 'TestFolder' -Force -Recurse
     }
 
 }

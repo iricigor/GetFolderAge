@@ -254,10 +254,10 @@ function Global:Get-FolderAge {
                 #
                 #
 
-                while ($KeepProcessing -and ($i -lt ($queue.Length))) {
+                while ($KeepProcessing -and ($i -lt ($queue.Count))) {
                     
                     $Current = $queue[$i]
-                    Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Length) $Current)"
+                    Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while $i/$($queue.Count) $Current"
                     if ($ProgressBar) {
                         Write-Progress -Activity $Folder -PercentComplete (100 * $i / ($queue.Count)) -Status $Current
                     }
@@ -269,8 +269,6 @@ function Global:Get-FolderAge {
                         $ErrorsFound = $true
                         $LastError = [string]$ErrVar
                     }
-                    $TotalFiles += @($Children).Count
-                    
                     # check LastWriteTime
                     $Children | % {
                         if (($_.LastWriteTime -gt $LastWriteTime) -or ($_.CreationTime -gt $LastWriteTime)) {
@@ -281,6 +279,8 @@ function Global:Get-FolderAge {
                             if ($CutOffTime -and ($LastWriteTime -gt $CutOffTime)) {$KeepProcessing = $false}
                         }
                     }
+                    if ($Children) {$TotalFiles += @($Children).Count} # v2 gives 1 for empty array
+                    Write-Debug -Message "$(Get-Date -f T)   total items checked: $TotalFiles"
 
                     # If quick check, we add children only if $i = 0
                     if ($QuickTest) {
@@ -290,9 +290,9 @@ function Global:Get-FolderAge {
                         # add sub-folders for further processing
                         $SubFolders = $Children | where {$_.PSIsContainer}
                         if ($SubFolders) {
-                            $queue += @($SubFolders.FullName)
+                            $queue += $SubFolders | Select -Expand FullName
                             # we can use List instead of Array for $queue, but we are not spending much time on this operation anyway
-                            Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while new queue length $($queue.Length), last `'$($queue[$queue.Length-1])`'"
+                            Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach.while new queue length $($queue.Count), last `'$($queue[$queue.Count-1])`'"
                         }
                     }
                     $i++
@@ -338,11 +338,11 @@ function Global:Get-FolderAge {
                 if ($OutputFile) {
                     if ($First) {
                         try {
-                            $RetVal | Export-Csv -LiteralPath $OutputFile -Encoding Unicode -NoTypeInformation
+                            $RetVal | Export-Csv -Path $OutputFile -Encoding Unicode -NoTypeInformation # Export-csv in PS v2 has no -LiteralPath
                             Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
                             $First = $false
                         } catch {
-                            Write-Error "$FunctionName failed while writing to $OutputFile, file output is skipped"
+                            Write-Error "$FunctionName failed while writing to $OutputFile, file output is skipped`n$_"
                             $OutputFile = $null
                         }
                     } else {
