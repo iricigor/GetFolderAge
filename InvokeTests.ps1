@@ -32,5 +32,5 @@ if (!(Get-Module PlatyPS | ? Version -ge 0.11.0)) {
 #
 
 Write-Host "Run Pester tests"
-$Result = Invoke-Pester -PassThru
+$Result = Invoke-Pester -PassThru -OutputFile PesterTestResults.xml
 if ($Result.failedCount -ne 0) {Write-Error "Pester returned errors"}
