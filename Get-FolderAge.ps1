@@ -1,3 +1,22 @@
+<#PSScriptInfo
+
+.VERSION 1.0
+.GUID c9788cc2-d4af-4219-bf7d-8dd8fa89584f
+.AUTHOR Igor Iric, iricigor@gmail.com, https://github.com/iricigor
+.COMPANYNAME 
+.COPYRIGHT 
+.TAGS fileserver folder-structure modification-date last-modified last-write-time path-too-long
+.LICENSEURI https://github.com/iricigor/GetFolderAge/blob/master/LICENSE
+.PROJECTURI https://github.com/iricigor/GetFolderAge
+.ICONURI 
+.EXTERNALMODULEDEPENDENCIES 
+.REQUIREDSCRIPTS 
+.EXTERNALSCRIPTDEPENDENCIES 
+.RELEASENOTES Initial release
+.DESCRIPTION Get-FolderAge returns `LastModifiedDate` for a specified folder(s) and if folders were modified after a specified cut-off date.
+
+#>
+
 # class FolderAgeResult {
 
 #     [string]$Path
