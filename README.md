@@ -23,10 +23,18 @@ You can see online latest script version at this [link](https://github.com/irici
 Raw PS1 file can be downloaded from [here](https://raw.githubusercontent.com/iricigor/GetFolderAge/master/Get-FolderAge.ps1).
 
 - **Clone repository:**
-If you want to see entire GitHub repository, just clone it `git clone https://github.com/iricigor/GetFolderAge.git`
+If you want to see entire GitHub repository, just clone it 
+
+`git clone https://github.com/iricigor/GetFolderAge.git`
 
 - **From PowerShell Gallery** _(preferred way)_:
-Script can be downloaded from [PS Gallery](https://www.powershellgallery.com/packages/Get-FolderAge) using command `Save-Script Get-FolderAge -Repository PSGallery -Path 'MyFolder'`
+Script can be downloaded from [PS Gallery](https://www.powershellgallery.com/packages/Get-FolderAge) using command 
+
+`Save-Script Get-FolderAge -Repository PSGallery -Path 'MyFolder'`
+
+Latest version:
+![GitHub release](https://img.shields.io/github/release/iricigor/GetFolderAge.svg)
+![GitHub Release Date](https://img.shields.io/github/release-date/iricigor/GetFolderAge.svg)
 
 ## Help and Examples
 
