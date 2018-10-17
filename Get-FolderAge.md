@@ -15,13 +15,13 @@ Get-FolderAge returns \`LastModifiedDate\` for a specified folder(s) and if fold
 ### Folders
 ```
 Get-FolderAge [-FolderName] <String[]> [-OutputFile <String>] [-CutOffDays <Int32>] [-CutOffTime <DateTime>]
- [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
+ [-Exclude <String[]>] [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
 ```
 
 ### InputFile
 ```
 Get-FolderAge -InputFile <String> [-OutputFile <String>] [-CutOffDays <Int32>] [-CutOffTime <DateTime>]
- [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
+ [-Exclude <String[]>] [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -140,6 +140,21 @@ In case of issues specifying an exact date, consider using -CutOffDays parameter
 
 ```yaml
 Type: DateTime
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Exclude
+Specifies, as a string array, an folder names that this cmdlet excludes in the search operation.
+
+```yaml
+Type: String[]
 Parameter Sets: (All)
 Aliases:
 
