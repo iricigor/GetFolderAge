@@ -104,6 +104,11 @@ function Global:Get-FolderAge {
     .PARAMETER Exclude
     Specifies, as a string array, an folder names that this cmdlet excludes in the search operation.
 
+    .PARAMETER Threads
+    If this parameter specifies number larger than 1, checks will be done in more than one thread.
+    This means that multiple folders will be processed in parallel which can bring significant speed improvement.
+    Prerequisite for this functionality is module ThreadJob available from PS Gallery (run: inmo threadjob).
+
     .PARAMETER QuickTest
     Switch which if specified will force to script to run in quick mode. The default is full depth search.
     QuickTest means only contents of the folder itself will be evaluated, i.e. it will not do full depth scan.
@@ -153,6 +158,8 @@ function Global:Get-FolderAge {
 
         [parameter(Mandatory=$false)] [string[]]$Exclude,
 
+        [parameter(Mandatory=$false)] [int]$Threads = 0,
+
         #
         # Switches
         #
@@ -200,6 +207,22 @@ function Global:Get-FolderAge {
         $First = $true # Used if there is output to file, only first line drops header
         $Separator = [IO.Path]::DirectorySeparatorChar
         $UC = '\\?\'
+
+        if ($Threads -gt 1) {
+            Write-Verbose -Message "$(Get-Date -f T)   checking threads prerequisites"
+
+            if (!(Get-Module ThreadJob -ListAvailable)) {
+                Write-Error "$FunctionName cannot find module ThreadJob, continuing without threads support"
+                $Threads = 0
+            } elseif (!(Get-Module ThreadJob)) {
+                Write-Verbose -Message "$(Get-Date -f T)   importing module ThreadJob"
+                Import-Module ThreadJob
+            }
+
+            $SourceFile = $MyInvocation.MyCommand.ScriptBlock.File
+            $JobList = @()
+
+        }
     }
 
 
@@ -239,6 +262,15 @@ function Global:Get-FolderAge {
                 Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
                 
                 # processing single folder $Folder
+
+                if ($Threads -gt 1) {
+
+                    $JobCode = ". $SourceFile`n$FunctionName '$Folder'"
+                    # TODO: Process other required parameters
+                    $JobList += Start-ThreadJob -ScriptBlock ([Scriptblock]::Create($JobCode)) -ThrottleLimit $Threads
+
+                    continue # to next $Folder
+                }
 
                 # initialize loop
                 $StartTime = Get-Date
@@ -373,6 +405,12 @@ function Global:Get-FolderAge {
     }
 
     END {
+
+        # if threads, receive them
+        if ($Threads -gt 1) {
+            Receive-Job $JobList -Wait            
+        }
+
         # function closing phase
         Write-Verbose -Message "$(Get-Date -f T) $FunctionName finished"
 }
