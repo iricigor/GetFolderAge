@@ -1,5 +1,9 @@
 # GetFolderAge
 
+Latest version:
+![GitHub release](https://img.shields.io/github/release/iricigor/GetFolderAge.svg)
+![GitHub Release Date](https://img.shields.io/github/release-date/iricigor/GetFolderAge.svg)
+
 PowerShell script which checks for last modified date _(LastWriteTime)_ for large number of folders.
 It checks recursively for all files and folders inside taking into account potential errors (inaccessible files, too long paths, etc.).
 
@@ -31,10 +35,6 @@ If you want to see entire GitHub repository, just clone it
 Script can be downloaded from [PS Gallery](https://www.powershellgallery.com/packages/Get-FolderAge) using command 
 
 `Save-Script Get-FolderAge -Repository PSGallery -Path 'MyFolder'`
-
-Latest version:
-![GitHub release](https://img.shields.io/github/release/iricigor/GetFolderAge.svg)
-![GitHub Release Date](https://img.shields.io/github/release-date/iricigor/GetFolderAge.svg)
 
 ## Help and Examples
 
