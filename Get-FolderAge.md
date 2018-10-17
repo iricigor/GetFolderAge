@@ -15,13 +15,13 @@ Get-FolderAge returns \`LastModifiedDate\` for a specified folder(s) and if fold
 ### Folders
 ```
 Get-FolderAge [-FolderName] <String[]> [-OutputFile <String>] [-CutOffDays <Int32>] [-CutOffTime <DateTime>]
- [-Exclude <String[]>] [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
+ [-Exclude <String[]>] [-Threads <Int32>] [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
 ```
 
 ### InputFile
 ```
 Get-FolderAge -InputFile <String> [-OutputFile <String>] [-CutOffDays <Int32>] [-CutOffTime <DateTime>]
- [-Exclude <String[]>] [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
+ [-Exclude <String[]>] [-Threads <Int32>] [-QuickTest] [-TestSubFolders] [-ProgressBar] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -61,6 +61,14 @@ Get-ChildItem \\server\share | ? Name -like 'User*' | Get-FolderAge
 
 Obtains list of folders and filters it by name.
 Then this list is passed via pipeline to Get-FolderAge
+
+### EXAMPLE 5
+```
+Get-ChildItem -Input '10shares.txt' -Threads 5
+```
+
+Gather information about 10 shares from input file, running 5 shares at the time.
+Requires ThreadJob module, which can be installed with Install-Module ThreadJob
 
 ## PARAMETERS
 
@@ -161,6 +169,24 @@ Aliases:
 Required: False
 Position: Named
 Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Threads
+If this parameter specifies number larger than 1, checks will be done in more than one thread.
+This means that multiple folders will be processed in parallel which can bring significant speed improvement.
+Prerequisite for this functionality is module ThreadJob available from PS Gallery (run: inmo threadjob).
+
+
+```yaml
+Type: Int32
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: 0
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

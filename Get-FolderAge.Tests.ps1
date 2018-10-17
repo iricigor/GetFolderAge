@@ -146,6 +146,12 @@ Describe "Proper $CommandName Functionality" {
         $Result0.TotalFiles - $Result1.TotalFiles | Should -Be 2
     }
 
+    It 'Gives the same results if Threads are used' {
+        $Result0 = Get-FolderAge -FolderName 'TestFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -Threads 2 -ea 0 # ignore no threads 
+        $Result0.TotalFiles -eq $Result1.TotalFiles | Should -Be $true
+    }
+
 }
 
 Describe "V2 Compatibility check for $CommandName" {

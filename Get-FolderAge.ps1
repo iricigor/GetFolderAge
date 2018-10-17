@@ -79,6 +79,11 @@ function Global:Get-FolderAge {
     Get-ChildItem \\server\share | ? Name -like 'User*' | Get-FolderAge
     Obtains list of folders and filters it by name. Then this list is passed via pipeline to Get-FolderAge
 
+    .EXAMPLE
+    Get-ChildItem -Input '10shares.txt' -Threads 5
+    Gather information about 10 shares from input file, running 5 shares at the time.
+    Requires ThreadJob module, which can be installed with Install-Module ThreadJob
+
     .PARAMETER FolderName
     FolderName specifies the folder which will be evaluated. Parameter accepts multiple values or pipeline input.
     Pipeline input can be obtained for example via Get-ChildItem command (see examples).
@@ -103,6 +108,11 @@ function Global:Get-FolderAge {
     
     .PARAMETER Exclude
     Specifies, as a string array, an folder names that this cmdlet excludes in the search operation.
+
+    .PARAMETER Threads
+    If this parameter specifies number larger than 1, checks will be done in more than one thread.
+    This means that multiple folders will be processed in parallel which can bring significant speed improvement.
+    Prerequisite for this functionality is module ThreadJob available from PS Gallery (run: inmo threadjob).
 
     .PARAMETER QuickTest
     Switch which if specified will force to script to run in quick mode. The default is full depth search.
@@ -153,6 +163,8 @@ function Global:Get-FolderAge {
 
         [parameter(Mandatory=$false)] [string[]]$Exclude,
 
+        [parameter(Mandatory=$false)] [int]$Threads = 0,
+
         #
         # Switches
         #
@@ -200,6 +212,34 @@ function Global:Get-FolderAge {
         $First = $true # Used if there is output to file, only first line drops header
         $Separator = [IO.Path]::DirectorySeparatorChar
         $UC = '\\?\'
+
+        if ($Threads -gt 1) {
+            Write-Verbose -Message "$(Get-Date -f T)   checking threads prerequisites"
+
+            if (!(Get-Module ThreadJob -ListAvailable)) {
+                Write-Error "$FunctionName cannot find module ThreadJob, continuing without threads support"
+                $Threads = 0
+            } elseif (!(Get-Module ThreadJob)) {
+                Write-Verbose -Message "$(Get-Date -f T)   importing module ThreadJob"
+                Import-Module ThreadJob
+            }
+
+            $SourceFile = $MyInvocation.MyCommand.ScriptBlock.File
+            $JobList = @()
+
+            if ($QuickTest -or $ProgressBar) {
+                Write-Warning -Message "$(Get-Date -f T)   $FunctionName cannot be use QuickTest or ProgressBar together Threads, disabling these options."
+                $QuickTest = $ProgressBar = $false
+            }
+
+            if ($CutOffTime) {
+                $CutOffString = [string]$CutOffTime
+                if (([datetime]$CutOffString - $CutOffTime).TotalSeconds -gt 1) {
+                    throw "$FunctionName cannot convert CutOffTime ($CutOffString)"
+                }
+            }
+
+        }
     }
 
 
@@ -239,6 +279,20 @@ function Global:Get-FolderAge {
                 Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
                 
                 # processing single folder $Folder
+
+                if ($Threads -gt 1) {
+
+                    $JobCode = "$FunctionName '$Folder'"
+                    if ($CutOffTime) {$JobCode += " -CutOffTime '$CutOffString'"}
+                    if ($Exclude) {$Join = "', '"; $JobCode += " -Exclude '$($Exclude -join $Join)'"}
+                    if ($OutputFile) {$JobCode += " -OutputFile '$OutputFile'"}
+                    # TODO: Process other required parameters: CutOffTime, Exclude, OutputFile
+                    Write-Verbose -Message "$(Get-Date -f T)   starting background job for '$Folder': $JobCode"
+                    $JobCode = ". $SourceFile`n$JobCode" # first import function 
+                    $JobList += Start-ThreadJob -ScriptBlock ([Scriptblock]::Create($JobCode)) -ThrottleLimit $Threads
+
+                    continue # to next $Folder
+                }
 
                 # initialize loop
                 $StartTime = Get-Date
@@ -373,8 +427,15 @@ function Global:Get-FolderAge {
     }
 
     END {
+
+        # if threads, receive them
+        if ($Threads -gt 1) {
+            Write-Verbose -Message "$(Get-Date -f T) $FunctionName waiting for background jobs results."
+            Receive-Job $JobList -Wait            
+        }
+
         # function closing phase
         Write-Verbose -Message "$(Get-Date -f T) $FunctionName finished"
-}
+    }
     
 }
