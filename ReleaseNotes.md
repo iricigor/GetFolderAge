@@ -1,4 +1,6 @@
-# Release notes for PowerShell script Get-FolderAge by github.com/iricigor
+# Release notes
+
+Release notes for PowerShell script **`Get-FolderAge`** by https://github.com/iricigor
 
 ## 1.1
 
