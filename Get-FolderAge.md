@@ -62,6 +62,14 @@ Get-ChildItem \\server\share | ? Name -like 'User*' | Get-FolderAge
 Obtains list of folders and filters it by name.
 Then this list is passed via pipeline to Get-FolderAge
 
+### EXAMPLE 5
+```
+Get-ChildItem -Input '10shares.txt' -Threads 5
+```
+
+Gather information about 10 shares from input file, running 5 shares at the time.
+Requires ThreadJob module, which can be installed with Install-Module ThreadJob
+
 ## PARAMETERS
 
 ### -FolderName
