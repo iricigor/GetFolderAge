@@ -134,6 +134,18 @@ Describe "Proper $CommandName Functionality" {
         $Result0.TotalFiles -gt $Result1.TotalFiles | Should -Be $true -Because "$($Result0.TotalFiles) and $($Result1.TotalFiles) should not be the same"
     }
 
+    It 'Excludes requested folders' {
+        New-Item -Path 'TestFolder' -Name 'ExcludedFolder' -ItemType Directory -Force | Out-Null
+        Start-Sleep 1
+        New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null
+        $Result0 = Get-FolderAge -FolderName 'TestFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -Exclude 'ExcludedFolder'
+        # Last item can be either ExcludedFolder or  ExcludedFile.txt
+        $Result0.LastItem | Should -Match 'ExcludedFolder' -Because "$($Result0.LastItem)"
+        $Result1.LastItem | Should -Not -Match 'ExcludedFolder' -Because "$($Result1.LastItem)"
+        $Result0.TotalFiles - $Result1.TotalFiles | Should -Be 2
+    }
+
 }
 
 Describe "V2 Compatibility check for $CommandName" {
