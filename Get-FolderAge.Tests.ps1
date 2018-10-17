@@ -139,7 +139,11 @@ Describe "Proper $CommandName Functionality" {
         Start-Sleep 1
         New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null
         $Result0 = Get-FolderAge -FolderName 'TestFolder'
-        $Result0.LastItem | Should -Not -Match 'ExcludedFolder' -Because "$($Result0.LastItem)"
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -Exclude 'ExcludedFolder'
+        # Last item can be either ExcludedFolder or  ExcludedFile.txt
+        $Result0.LastItem | Should -Match 'ExcludedFolder' -Because "$($Result0.LastItem)"
+        $Result1.LastItem | Should -Not -Match 'ExcludedFolder' -Because "$($Result1.LastItem)"
+        $Result0.TotalFiles - $Result1.TotalFiles | Should -Be 2
     }
 
 }

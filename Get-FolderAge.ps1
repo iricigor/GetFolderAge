@@ -267,11 +267,20 @@ function Global:Get-FolderAge {
                     if (($Current.Length -gt 250) -and (!($Current.StartsWith($UC))) -and (!($IsLinux))) {
                         $Current = $UC + $Current  # too long path, append unicode prefix, see https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation
                     }
+                    # read files and folders inside
                     $Children = Get-ChildItem -LiteralPath $Current -Force -ErrorAction SilentlyContinue -ErrorVariable ErrVar
                     if ($ErrVar) {
                         $ErrorsFound = $true
                         $LastError = [string]$ErrVar
                     }
+                    # keep all files and not excluded folders
+                    if ($Exclude) {
+                        if ($Children | where {$_.PSIsContainer} | where {$Exclude -contains ($_.Name)}) {
+                            Write-Verbose -Message "$(Get-Date -f T)   excluding $(($Children | where {$_.PSIsContainer} | where {$Exclude -contains ($_.Name)}).Name -join ',')"
+                            $Children = $Children | where {($_.PSIsContainer -eq $false) -or (!($Exclude -contains ($_.Name)))}    
+                        }
+                    }
+                    
                     # check LastWriteTime
                     $Children | % {
                         if (($_.LastWriteTime -gt $LastWriteTime) -or ($_.CreationTime -gt $LastWriteTime)) {
