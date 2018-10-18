@@ -15,6 +15,6 @@ Date: Wednesday, October 17, 2018
 
 Date: Monday, October 15, 2018
 
-### New functionality in 0.1
+### New functionality in 1.0
 
 - First, initial release
