@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.1
+.VERSION 1.2
 .GUID c9788cc2-d4af-4219-bf7d-8dd8fa89584f
 .AUTHOR Igor Iric, iricigor@gmail.com, https://github.com/iricigor
 .COMPANYNAME 
@@ -12,7 +12,7 @@
 .EXTERNALMODULEDEPENDENCIES 
 .REQUIREDSCRIPTS 
 .EXTERNALSCRIPTDEPENDENCIES 
-.RELEASENOTES Added -Exclude and -Threads parameters, for more info see https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
+.RELEASENOTES Bug fixes for append and threads issues, added restartable functionality and alias, for more info see https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
 .DESCRIPTION Get-FolderAge returns `LastModifiedDate` for a specified folder(s) and if folders were modified after a specified cut-off date.
 
 #>
@@ -439,3 +439,6 @@ function Global:Get-FolderAge {
     }
     
 }
+
+
+New-Alias -Name gfa -Value Get-FolderAge

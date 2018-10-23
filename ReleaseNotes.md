@@ -2,6 +2,18 @@
 
 Release notes for PowerShell script **`Get-FolderAge`** by https://github.com/iricigor
 
+## 1.2 - Not released yet
+
+Date: Wednesday, October 24, 2018 - planned
+
+#### Bug fixes in 1.2
+
+- 
+
+### New functionality in 1.2
+
+- Added function alias gfa for Get-FolderAge
+
 ## 1.1
 
 Date: Wednesday, October 17, 2018
