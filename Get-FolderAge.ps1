@@ -244,8 +244,14 @@ function Global:Get-FolderAge {
         if ($OutputFile) {
             if (Test-Path -LiteralPath $OutputFile) {
                 $RP = Resolve-Path -LiteralPath $OutputFile
-                # TODO: Get list of folders to be skipped
+                try {
+                    $FoldersToSkip = Import-Csv -LiteralPath $OutputFile | Select -Expand Path
+                    Write-Verbose -Message "$(Get-Date -f T)   Script continues writing to $OutputFile, with skipping $(@($FoldersToSkip).Count) processed folders"
+                } catch {
+                    throw "$FunctionName found existing file $OutputFile in unrecognized format, cannot continue."
+                }
             } else {
+                $FoldersToSkip = $null
                 try {
                     New-Item $OutputFile -ItemType File -ea Stop | Out-Null
                     $RP = Resolve-Path -LiteralPath $OutputFile
@@ -300,6 +306,11 @@ function Global:Get-FolderAge {
                 Write-Debug -Message "$(Get-Date -f T)   PROCESS.foreach.foreach $Folder"
                 
                 # processing single folder $Folder
+
+                if ($FoldersToSkip -and ($FoldersToSkip -contains $Folder)) {
+                    Write-Verbose -Message "$(Get-Date -f T)   skipping $Folder from processing, because it is present in $OutputFile."
+                    continue
+                }
 
                 if ($Threads -gt 1) {
 
@@ -412,12 +423,14 @@ function Global:Get-FolderAge {
                         LastWriteTime = $LastWriteTime
                         Modified = $Modified
                         Confident = $Confident
+                        # statistical info
                         TotalFiles = $TotalFiles
                         TotalFolders = $queue.Count
                         LastItem = $LastItemName
                         Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
                         ElapsedSeconds = ($EndTime - $StartTime).TotalSeconds
                         FinishTime = $EndTime
+                        # error info
                         Errors = $ErrorsFound
                         LastError = $LastError
                     }
