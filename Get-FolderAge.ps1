@@ -441,4 +441,4 @@ function Global:Get-FolderAge {
 }
 
 
-New-Alias -Name gfa -Value Get-FolderAge
+Set-Alias -Name gfa -Value Get-FolderAge

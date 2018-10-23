@@ -38,6 +38,11 @@ Describe "Function $CommandName Definition" {
             $CmdDef.Parameters.Keys | Should -Contain $P1
         }
     }
+
+    It 'Command should have alias' {
+        Get-Alias -Definition $CommandName -ea 0 | Should -Not -Be $null
+    }
+
 }
 
 
