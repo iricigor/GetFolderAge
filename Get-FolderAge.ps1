@@ -209,7 +209,6 @@ function Global:Get-FolderAge {
             }
         }
 
-        $First = $true # Used if there is output to file, only first line drops header
         $Separator = [IO.Path]::DirectorySeparatorChar
         $UC = '\\?\'
 
@@ -239,6 +238,28 @@ function Global:Get-FolderAge {
                 }
             }
 
+        }
+
+        # Restartable script setup
+        if ($OutputFile) {
+            if (Test-Path -LiteralPath $OutputFile) {
+                $RP = Resolve-Path -LiteralPath $OutputFile
+                # TODO: Get list of folders to be skipped
+            } else {
+                try {
+                    New-Item $OutputFile -ItemType File -ea Stop | Out-Null
+                    $RP = Resolve-Path -LiteralPath $OutputFile
+                    Remove-Item $OutputFile -Force
+                } catch {
+                    throw "$FunctionName cannot write output file $OutputFile`: $_"
+                }
+            }            
+            if ($RP.Provider.Name -ne 'FileSystem') {
+                throw "$FunctionName provided output file $OutputFile is not on the FileSystem"
+            } elseif ($OutputFile -ne $RP.ProviderPath) {
+                Write-Verbose -Message "$(Get-Date -f T)   Expanding $OutputFile to $($RP.Path) via $($RP.Provider.Name) call"
+                $OutputFile = $RP.ProviderPath
+            }
         }
     }
 
@@ -289,6 +310,7 @@ function Global:Get-FolderAge {
                     Write-Verbose -Message "$(Get-Date -f T)   starting background job for '$Folder': $JobCode"
                     $JobCode = ". $SourceFile`n$JobCode" # first import function 
                     $JobList += Start-ThreadJob -ScriptBlock ([Scriptblock]::Create($JobCode)) -ThrottleLimit $Threads
+                    Start-Sleep -Milliseconds 200 # let the job execute begin block, before starting next one
 
                     continue # to next $Folder
                 }
@@ -399,13 +421,16 @@ function Global:Get-FolderAge {
                         Errors = $ErrorsFound
                         LastError = $LastError
                     }
+                
+                #
                 # File output, if needed
+                #
+
                 if ($OutputFile) {
-                    if ($First) {
+                    if (!(Test-Path $OutputFile)) {
                         try {
                             $RetVal | Export-Csv -Path $OutputFile -Encoding Unicode -NoTypeInformation # Export-csv in PS v2 has no -LiteralPath
                             Write-Verbose -Message "$(Get-Date -f T)   created output file $OutputFile"
-                            $First = $false
                         } catch {
                             Write-Error "$FunctionName failed while writing to $OutputFile, file output is skipped`n$_"
                             $OutputFile = $null
