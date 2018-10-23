@@ -166,7 +166,8 @@ function Global:Get-FolderAge {
 
         [parameter(Mandatory=$false)] [string[]]$Exclude,
 
-        [parameter(Mandatory=$false)] [int]$Threads = 0,
+        [parameter(Mandatory=$false)]
+        [ValidateRange(0,50)]         [int]$Threads = 0,
 
         #
         # Switches
@@ -471,7 +472,8 @@ function Global:Get-FolderAge {
         # if threads, receive them
         if ($Threads -gt 1) {
             Write-Verbose -Message "$(Get-Date -f T) $FunctionName waiting for background jobs results."
-            Receive-Job $JobList -Wait            
+            Receive-Job $JobList -Wait
+            Remove-Job $JobList
         }
 
         # function closing phase
