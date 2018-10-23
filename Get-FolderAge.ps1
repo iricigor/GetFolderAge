@@ -185,10 +185,10 @@ function Global:Get-FolderAge {
 
         # process $InputFile
         if ($InputFile) {
-            if (!(Test-Path $InputFile)) {
+            if (!(Test-Path -LiteralPath $InputFile)) {
                 throw "$FunctionName cannot find input file $InputFile"
             }
-            $FolderName = Get-Content -Path $InputFile -ErrorAction SilentlyContinue
+            $FolderName = Get-Content -LiteralPath $InputFile -ErrorAction SilentlyContinue
             if ($FolderName) {
                 Write-Verbose -Message "$(Get-Date -f T)   successfully read $InputFile with $(@($FolderName).Count) entries"
             } else {
@@ -253,7 +253,7 @@ function Global:Get-FolderAge {
                 Write-Error "$FunctionName cannot find folder $FolderEntry"
                 continue
             }
-            $RP = Resolve-Path $FolderEntry
+            $RP = Resolve-Path -LiteralPath $FolderEntry
             if ($RP.Provider.Name -ne 'FileSystem') {
                 Write-Error "$FunctionName provided path $FolderEntry is not on the FileSystem"
                 continue
@@ -263,7 +263,7 @@ function Global:Get-FolderAge {
             }
 
             if ($TestSubFolders) {
-                $FolderList = @(Get-ChildItem $FolderEntry -Directory -ea SilentlyContinue | Select -Expand FullName)
+                $FolderList = @(Get-ChildItem -LiteralPath $FolderEntry -Directory -ea SilentlyContinue | Select -Expand FullName)
                 if ($FolderList) {
                     Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
                 } else {
@@ -286,7 +286,6 @@ function Global:Get-FolderAge {
                     if ($CutOffTime) {$JobCode += " -CutOffTime '$CutOffString'"}
                     if ($Exclude) {$Join = "', '"; $JobCode += " -Exclude '$($Exclude -join $Join)'"}
                     if ($OutputFile) {$JobCode += " -OutputFile '$OutputFile'"}
-                    # TODO: Process other required parameters: CutOffTime, Exclude, OutputFile
                     Write-Verbose -Message "$(Get-Date -f T)   starting background job for '$Folder': $JobCode"
                     $JobCode = ". $SourceFile`n$JobCode" # first import function 
                     $JobList += Start-ThreadJob -ScriptBlock ([Scriptblock]::Create($JobCode)) -ThrottleLimit $Threads
@@ -298,7 +297,7 @@ function Global:Get-FolderAge {
                 $StartTime = Get-Date
                 $i = 0
                 $queue = @($Folder)
-                $LastWriteTime = Get-Item -Path $Folder | Select -Expand LastWriteTime
+                $LastWriteTime = Get-Item -LiteralPath $Folder | Select -Expand LastWriteTime
                 $TotalFiles = 0
                 $LastItemName = $Folder
                 $KeepProcessing = $true
@@ -413,7 +412,7 @@ function Global:Get-FolderAge {
                         }
                     } else {
                         try {
-                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -LiteralPath $OutputFile -Append -Encoding Unicode
+                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -Path $OutputFile -Append -Encoding Unicode
                             Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
                         } catch {
                             Write-Error "$FunctionName failed to append date to $OutputFile, entry for $Folder will be skipped.`n$_"
