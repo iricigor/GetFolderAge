@@ -412,7 +412,7 @@ function Global:Get-FolderAge {
                         }
                     } else {
                         try {
-                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -Path $OutputFile -Append -Encoding Unicode
+                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -FilePath $OutputFile -Append -Encoding Unicode
                             Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
                         } catch {
                             Write-Error "$FunctionName failed to append date to $OutputFile, entry for $Folder will be skipped.`n$_"
