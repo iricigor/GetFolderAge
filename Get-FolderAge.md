@@ -105,10 +105,11 @@ Accept wildcard characters: False
 ```
 
 ### -OutputFile
-A string specifying file name which will be used for output.
-If not specified, there will be no file output generated.
-This is especially useful for long running commands.
-Each folder as soon as processed will be stored in the file.
+A string specifying file name which will be used for output in addition to screen (or pipeline) output.
+This is especially useful for long running commands. Each folder as soon as processed will be stored in the file.
+This can be also used for restarting the script, if it gets interrupted before it finishes all folders.
+Just specify the same input and output files, and script will skip already processed folders!
+If this parameter is not specified, there will be no file output generated.
 
 ```yaml
 Type: String

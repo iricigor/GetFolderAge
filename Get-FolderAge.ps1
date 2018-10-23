@@ -12,7 +12,7 @@
 .EXTERNALMODULEDEPENDENCIES 
 .REQUIREDSCRIPTS 
 .EXTERNALSCRIPTDEPENDENCIES 
-.RELEASENOTES Bug fixes for append and threads issues, added restartable functionality and alias, for more info see https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
+.RELEASENOTES Added restartable script functionality and alias, bug fixes for append and threads issues, for more info see https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
 .DESCRIPTION Get-FolderAge returns `LastModifiedDate` for a specified folder(s) and if folders were modified after a specified cut-off date.
 
 #>
@@ -103,8 +103,11 @@ function Global:Get-FolderAge {
     If both CutOffTime and CutOffDays specified, the script will throw a warning.
     
     .PARAMETER OutputFile
-    A string specifying file name which will be used for output. If not specified, there will be no file output generated.
+    A string specifying file name which will be used for output in addition to screen (or pipeline) output.
     This is especially useful for long running commands. Each folder as soon as processed will be stored in the file.
+    This can be also used for restarting the script, if it gets interrupted before it finishes all folders.
+    Just specify the same input and output files, and script will skip already processed folders!
+    If this parameter is not specified, there will be no file output generated.
     
     .PARAMETER Exclude
     Specifies, as a string array, an folder names that this cmdlet excludes in the search operation.
