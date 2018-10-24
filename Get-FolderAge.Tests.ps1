@@ -38,6 +38,11 @@ Describe "Function $CommandName Definition" {
             $CmdDef.Parameters.Keys | Should -Contain $P1
         }
     }
+
+    It 'Command should have alias' {
+        Get-Alias -Definition $CommandName -ea 0 | Should -Not -Be $null
+    }
+
 }
 
 
@@ -150,6 +155,17 @@ Describe "Proper $CommandName Functionality" {
         $Result0 = Get-FolderAge -FolderName 'TestFolder'
         $Result1 = Get-FolderAge -FolderName 'TestFolder' -Threads 2 -ea 0 # ignore no threads 
         $Result0.TotalFiles -eq $Result1.TotalFiles | Should -Be $true
+    }
+
+    It 'Runs Threads with the same output file' {
+        $File1 = Join-Path 'TestFolder' 'NoThreads.csv'
+        $File2 = Join-Path 'TestFolder' 'WithThreads.csv'
+        $Result0 = Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile $File1
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -TestSubFolders -OutputFile $File2 -Threads 2 -ea 0
+        $Count1 = (Get-Content $File1).Count
+        $Count2 = (Get-Content $File2).Count
+        $Count2 | Should -Be $Count1 -Because "NoThreads and WithThreads should be the same"
+        $Count2 | Should -Be ($Result1.Count + 1) -Because "Pipeline and File should differ by 1 (header line)"
     }
 
 }
