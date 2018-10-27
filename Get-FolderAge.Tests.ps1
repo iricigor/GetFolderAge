@@ -90,7 +90,7 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Can check first level folders' {
-        $SubFolder = Get-ChildItem 'TestFolder' -Directory
+        $SubFolder = Get-ChildItem 'TestFolder' | ? {$_.PSIsContainer}
         @($SubFolder).Count | Should -Be 1 -Because ($SubFolder.Name -join ',')
 
         $Result1 = Get-FolderAge -FolderName ($SubFolder.FullName)
@@ -111,7 +111,7 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Cutoff should add Modified result' {
-        Get-FolderAge -FolderName 'TestFolder' | Select -Expand Modified | Should -Be $null
+        (Get-FolderAge -FolderName 'TestFolder').Modified | Should -Be $null
         Get-FolderAge -FolderName 'TestFolder' -CutOffDays 1 | Select -Expand Modified | Should -Not -Be $null
     }
 
@@ -166,6 +166,39 @@ Describe "Proper $CommandName Functionality" {
         $Count2 = (Get-Content $File2).Count
         $Count2 | Should -Be $Count1 -Because "NoThreads and WithThreads should be the same"
         $Count2 | Should -Be ($Result1.Count + 1) -Because "Pipeline and File should differ by 1 (header line)"
+    }
+
+    if ((Get-PSDrive L -ev PSDriveErr -ea 0) -or ($PSVersionTable.PSVersion -lt '5.0')) {
+        # Skipping long path tests if PS v2 or drive L: exists
+    } else {
+        It 'Processes long names' {
+            # assign 2 long names
+            $Name1 = (1..200 | %{[char](get-random -InputObject (65..90))}) -join '' # 100 random characters
+            $Name2 = (1..200 | %{[char](get-random -InputObject (65..90))}) -join ''
+            # setup structure
+            $LongFolder = New-Item (Join-Path 'TestFolder' $Name1) -ItemType Directory
+            if ($IsLinux) {
+                $LongPath = $LongFolder.FullName
+            } else {
+                $LongPath = 'L:'
+                subst $LongPath ($LongFolder.FullName)
+                Get-PSDrive | Out-Null # just to rescan drives
+            }
+            New-Item (Join-Path $LongPath $Name2) -ItemType Directory
+            # run tests
+            {Get-FolderAge -FolderName 'TestFolder'} | Should -Not -Throw
+            $Result = Get-FolderAge -FolderName 'TestFolder'
+            $Result | Should -Not -Be $null
+            $Result.LastItem -match $Name1 | Should -Be $true 
+            # clean up after the test
+            if ($IsLinux) {
+                Remove-Item $LongPath -Force -Recurse
+            } else {
+                Remove-Item L:\$Name2 -Force
+                subst $LongPath /D
+                Remove-Item ($LongFolder.FullName) -Force
+            }
+        }    
     }
 
 }

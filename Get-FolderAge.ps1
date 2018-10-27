@@ -294,7 +294,7 @@ function Global:Get-FolderAge {
             }
 
             if ($TestSubFolders) {
-                $FolderList = @(Get-ChildItem -LiteralPath $FolderEntry -Directory -ea SilentlyContinue | Select -Expand FullName)
+                $FolderList = @(Get-ChildItem -LiteralPath $FolderEntry -ea SilentlyContinue | where {$_.PSIsContainer} | Select -Expand FullName)
                 if ($FolderList) {
                     Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
                 } else {
@@ -360,8 +360,10 @@ function Global:Get-FolderAge {
                     # read files and folders inside
                     $Children = Get-ChildItem -LiteralPath $Current -Force -ErrorAction SilentlyContinue -ErrorVariable ErrVar
                     if ($ErrVar) {
+                        Write-Debug -Message "$(Get-Date -f T)   Error processing children on $Current`: $ErrVar"
                         $ErrorsFound = $true
                         $LastError = [string]$ErrVar
+                        $LastErrorItem = $Current
                     }
                     # keep all files and not excluded folders
                     if ($Exclude) {
@@ -437,6 +439,7 @@ function Global:Get-FolderAge {
                         # error info
                         Errors = $ErrorsFound
                         LastError = $LastError
+                        LastErrorItem = $LastErrorItem
                     }
                 
                 #
