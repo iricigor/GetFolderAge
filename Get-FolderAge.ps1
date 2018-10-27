@@ -187,11 +187,17 @@ function Global:Get-FolderAge {
         $FunctionName = $MyInvocation.MyCommand.Name
         Write-Verbose -Message "$(Get-Date -f G) $FunctionName starting"
 
+        # internal function which check if path exists, if it is on file system and if it is not a folder
+        function TestFile ([string]$Description,[string]$FilePath) { 
+            if (!(Test-Path -LiteralPath $FilePath)) {throw "$FunctionName cannot process $Description $FilePath, because it does not exist"}
+            $RP = Resolve-Path $FilePath
+            if ($RP.Provider.Name -ne 'FileSystem')  {throw "$FunctionName cannot process $Description $FilePath, because it is not on the file system"}
+            if ((Get-Item $FilePath).PSIsContainer)  {throw "$FunctionName cannot process $Description $FilePath, because it is directory and not a file"}
+        }
+
         # process $InputFile
         if ($InputFile) {
-            if (!(Test-Path -LiteralPath $InputFile)) {
-                throw "$FunctionName cannot find input file $InputFile"
-            }
+            TestFile '-InputFile' $InputFile
             $FolderName = Get-Content -LiteralPath $InputFile -ErrorAction SilentlyContinue
             if ($FolderName) {
                 Write-Verbose -Message "$(Get-Date -f T)   successfully read $InputFile with $(@($FolderName).Count) entries"
@@ -247,7 +253,7 @@ function Global:Get-FolderAge {
         # Restartable script setup
         if ($OutputFile) {
             if (Test-Path -LiteralPath $OutputFile) {
-                $RP = Resolve-Path -LiteralPath $OutputFile
+                TestFile '-OutputFile' $OutputFile
                 try {
                     $FoldersToSkip = Import-Csv -LiteralPath $OutputFile | Select -Expand Path
                     Write-Verbose -Message "$(Get-Date -f T)   Script continues writing to $OutputFile, with skipping $(@($FoldersToSkip).Count) processed folders"
@@ -256,17 +262,17 @@ function Global:Get-FolderAge {
                 }
             } else {
                 $FoldersToSkip = $null
-                try {
-                    New-Item $OutputFile -ItemType File -ea Stop | Out-Null
-                    $RP = Resolve-Path -LiteralPath $OutputFile
-                    Remove-Item $OutputFile -Force
-                } catch {
-                    throw "$FunctionName cannot write output file $OutputFile`: $_"
-                }
+                # test creating file
+                # FIXME: For paths not on the file system, we try to create new item which is not good, for example HKCU:\Environment\BB
+                # root of the problem is that we cannot resolve-path if it is not existing
+                try   {New-Item $OutputFile -ItemType File -ea Stop | Out-Null} # we should have writable location
+                catch {throw "$FunctionName cannot create $OutputFile`: $([string]$_)"}
+                # test proper path
+                try     {TestFile '-OutputFile' $OutputFile}
+                catch   {throw $_}
+                finally {Remove-Item $OutputFile -Force -ea 0}
             }            
-            if ($RP.Provider.Name -ne 'FileSystem') {
-                throw "$FunctionName provided output file $OutputFile is not on the FileSystem"
-            } elseif ($OutputFile -ne $RP.ProviderPath) {
+            if ($OutputFile -ne $RP.ProviderPath) {
                 Write-Verbose -Message "$(Get-Date -f T)   Expanding $OutputFile to $($RP.Path) via $($RP.Provider.Name) call"
                 $OutputFile = $RP.ProviderPath
             }
