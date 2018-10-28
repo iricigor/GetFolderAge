@@ -189,7 +189,7 @@ Describe "Proper $CommandName Functionality" {
             {Get-FolderAge -FolderName 'TestFolder'} | Should -Not -Throw
             $Result = Get-FolderAge -FolderName 'TestFolder'
             $Result | Should -Not -Be $null
-            $Result.LastItem -match $Name1 | Should -Be $true 
+            $Result.LastItem -match $Name1 | Should -Be $true -Because "$($Result.LastItem) should be part of $Name1 folder"
             # clean up after the test
             if ($IsLinux) {
                 Remove-Item $LongPath -Force -Recurse
