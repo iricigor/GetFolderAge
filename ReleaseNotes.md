@@ -2,6 +2,22 @@
 
 Release notes for PowerShell script **`Get-FolderAge`** by https://github.com/iricigor
 
+## 1.2.1
+
+Date: Sunday, October 28, 2018
+
+### New functionality in 1.2.1
+
+- No new functionality
+
+#### Bug fixes in 1.2
+
+- Improved input/output file detection (i.e. folders, non-filesystem items, etc)
+- Further PowerShell v2 compatibility issues
+- Further improved handling of OutputFile when Threads are used
+
+Full list of resolved issues available [here](https://github.com/iricigor/GetFolderAge/milestone/5?closed=1)
+
 ## 1.2
 
 Date: Wednesday, October 24, 2018

@@ -95,9 +95,11 @@ It also outputs diagnostic/statistics info:
 * [string]`LastItem` - an item with the latest timestamp found (note that this might not be really the latest modified file. If this timestamp is newer than CutOffDate, commandlet will not search further.
 * [int]`Depth` - total depth of scanned folders relative to initial folder. If QuickTest, then it will be 1, regardless of real depth. If CutOffDate specified, it might not go to full depth, so this number will be smaller than full depth.
 * [decimal]`ElapsedSeconds` - time spent in checking the folder
+* [datetime]`StartTime` - date and time when folder check started
 * [datetime]`FinishTime` - date and time when folder check was completed
 * [bool]`Errors` - indicate if command encountered errors during its execution (i.e. Access Denied on some file)
 * [string]`LastError` - text of the last encountered error
+* [string]`LastErrorItem` - file/folder which raised last error
 
 ### Restartable script
 

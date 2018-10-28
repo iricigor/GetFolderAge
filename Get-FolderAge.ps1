@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.2
+.VERSION 1.2.1
 .GUID c9788cc2-d4af-4219-bf7d-8dd8fa89584f
 .AUTHOR Igor Iric, iricigor@gmail.com, https://github.com/iricigor
 .COMPANYNAME 
@@ -12,18 +12,10 @@
 .EXTERNALMODULEDEPENDENCIES 
 .REQUIREDSCRIPTS 
 .EXTERNALSCRIPTDEPENDENCIES 
-.RELEASENOTES Added restartable script functionality and alias, bug fixes for append and threads issues, for more info see https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
+.RELEASENOTES Reliability improvements https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
 .DESCRIPTION Get-FolderAge returns `LastModifiedDate` for a specified folder(s) and if folders were modified after a specified cut-off date.
 
 #>
-
-# class FolderAgeResult {
-
-#     [string]$Path
-#     [datetime]$LastWriteTime
-#     [Nullable[boolean]]$Modified
-
-# }
 
 function Global:Get-FolderAge {
 
@@ -187,11 +179,22 @@ function Global:Get-FolderAge {
         $FunctionName = $MyInvocation.MyCommand.Name
         Write-Verbose -Message "$(Get-Date -f G) $FunctionName starting"
 
+        # internal function which check if path exists, if it is on file system and if it is not a folder
+        function TestFile ([string]$Description,[string]$FilePath) { 
+            if (!(Test-Path -LiteralPath $FilePath)) {throw "$FunctionName cannot process $Description $FilePath, because it does not exist"}
+            $RP = Resolve-Path $FilePath
+            if ($RP.Provider.Name -ne 'FileSystem')  {throw "$FunctionName cannot process $Description $FilePath, because it is not on the file system"}
+            if ((Get-Item $FilePath).PSIsContainer)  {throw "$FunctionName cannot process $Description $FilePath, because it is directory and not a file"}
+        }
+
+        # constants
+        $Separator = [IO.Path]::DirectorySeparatorChar
+        $UC = '\\?\'
+        $ThreadsLock = '.Get-FolderAge.ThreadsLock'
+
         # process $InputFile
         if ($InputFile) {
-            if (!(Test-Path -LiteralPath $InputFile)) {
-                throw "$FunctionName cannot find input file $InputFile"
-            }
+            TestFile '-InputFile' $InputFile
             $FolderName = Get-Content -LiteralPath $InputFile -ErrorAction SilentlyContinue
             if ($FolderName) {
                 Write-Verbose -Message "$(Get-Date -f T)   successfully read $InputFile with $(@($FolderName).Count) entries"
@@ -212,9 +215,6 @@ function Global:Get-FolderAge {
                 Write-Verbose -Message "$(Get-Date -f T)   running script without CutOffTime"
             }
         }
-
-        $Separator = [IO.Path]::DirectorySeparatorChar
-        $UC = '\\?\'
 
         if ($Threads -gt 1) {
             Write-Verbose -Message "$(Get-Date -f T)   checking threads prerequisites"
@@ -246,30 +246,51 @@ function Global:Get-FolderAge {
 
         # Restartable script setup
         if ($OutputFile) {
-            if (Test-Path -LiteralPath $OutputFile) {
-                $RP = Resolve-Path -LiteralPath $OutputFile
-                try {
-                    $FoldersToSkip = Import-Csv -LiteralPath $OutputFile | Select -Expand Path
-                    Write-Verbose -Message "$(Get-Date -f T)   Script continues writing to $OutputFile, with skipping $(@($FoldersToSkip).Count) processed folders"
-                } catch {
-                    throw "$FunctionName found existing file $OutputFile in unrecognized format, cannot continue."
-                }
-            } else {
+            if (($Threads -eq 0) -and (Test-Path -LiteralPath "$OutputFile$ThreadsLock")) {
+                # we are inside of threaded job, skip all the tests
                 $FoldersToSkip = $null
-                try {
-                    New-Item $OutputFile -ItemType File -ea Stop | Out-Null
+                # Run threaded and stop it; then run simple job causes to skip tests, but they are already done in threaded job
+            } else {
+                # we are inside simple or master job with existing output file, (Threads -gt 0) -or (.threadslock not existing)
+            
+                if (Test-Path -LiteralPath $OutputFile) {
                     $RP = Resolve-Path -LiteralPath $OutputFile
-                    Remove-Item $OutputFile -Force
-                } catch {
-                    throw "$FunctionName cannot write output file $OutputFile`: $_"
+                    TestFile '-OutputFile' $OutputFile
+                    try {
+                        $FoldersToSkip = Import-Csv -LiteralPath $OutputFile | Select -Expand Path
+                        Write-Verbose -Message "$(Get-Date -f T)   Script continues writing to $OutputFile, with skipping $(@($FoldersToSkip).Count) processed folders"
+                    } catch {
+                        throw "$FunctionName found existing file $OutputFile in unrecognized format, cannot continue."
+                    }
+                } else {
+                    # test creating file
+                    # FIXME: We try to create new item also on non-file-system which is not good, for example HKCU:\Environment\BB; we cannot resolve non existing path
+                    $DeleteIt = $false
+                    try   {
+                        New-Item $OutputFile -ItemType File -ea Stop | Out-Null # we should have writable location
+                        $DeleteIt = $true                    
+                    } catch {
+                        if ($_ -notmatch 'already exists') { # multiple threads can cause to create file in the meantime
+                            throw "$FunctionName cannot create $OutputFile`: $_"
+                        }
+                    } 
+                    # test proper path
+                    $RP = Resolve-Path -LiteralPath $OutputFile
+                    try     {TestFile '-OutputFile' $OutputFile}
+                    catch   {throw $_}
+                    finally {if ($DeleteIt) {Remove-Item $OutputFile -Force -ea 0}}
+                    $FoldersToSkip = $null
+                }            
+                # resolve outputfile path
+                if ($OutputFile -ne $RP.ProviderPath) {
+                    Write-Verbose -Message "$(Get-Date -f T)   Expanding $OutputFile to $($RP.Path) via $($RP.Provider.Name) call"
+                    $OutputFile = $RP.ProviderPath
                 }
-            }            
-            if ($RP.Provider.Name -ne 'FileSystem') {
-                throw "$FunctionName provided output file $OutputFile is not on the FileSystem"
-            } elseif ($OutputFile -ne $RP.ProviderPath) {
-                Write-Verbose -Message "$(Get-Date -f T)   Expanding $OutputFile to $($RP.Path) via $($RP.Provider.Name) call"
-                $OutputFile = $RP.ProviderPath
             }
+        }
+
+        if (($Threads -gt 1) -and (Get-Job | where {$_.State -eq 'Running'})) {
+            Write-Warning -Message "$(Get-Date -f T) $FunctionName can be impacted with already running jobs. Consider removing them with Get-Job | Remove-Job -Force"
         }
     }
 
@@ -294,7 +315,7 @@ function Global:Get-FolderAge {
             }
 
             if ($TestSubFolders) {
-                $FolderList = @(Get-ChildItem -LiteralPath $FolderEntry -Directory -ea SilentlyContinue | Select -Expand FullName)
+                $FolderList = @(Get-ChildItem -LiteralPath $FolderEntry -ea SilentlyContinue | where {$_.PSIsContainer} | Select -Expand FullName)
                 if ($FolderList) {
                     Write-Verbose -Message "$(Get-Date -f T)   Processing $($FolderList.Count) subfolders of $FolderEntry"
                 } else {
@@ -318,6 +339,7 @@ function Global:Get-FolderAge {
 
                 if ($Threads -gt 1) {
 
+                    if ($OutputFile) {New-Item "$OutputFile$ThreadsLock" -ea 0 | Out-Null}
                     $JobCode = "$FunctionName '$Folder'"
                     if ($CutOffTime) {$JobCode += " -CutOffTime '$CutOffString'"}
                     if ($Exclude) {$Join = "', '"; $JobCode += " -Exclude '$($Exclude -join $Join)'"}
@@ -360,8 +382,10 @@ function Global:Get-FolderAge {
                     # read files and folders inside
                     $Children = Get-ChildItem -LiteralPath $Current -Force -ErrorAction SilentlyContinue -ErrorVariable ErrVar
                     if ($ErrVar) {
+                        Write-Debug -Message "$(Get-Date -f T)   Error processing children on $Current`: $ErrVar"
                         $ErrorsFound = $true
                         $LastError = [string]$ErrVar
+                        $LastErrorItem = $Current
                     }
                     # keep all files and not excluded folders
                     if ($Exclude) {
@@ -433,10 +457,12 @@ function Global:Get-FolderAge {
                         LastItem = $LastItemName
                         Depth = ($queue[$i-1].split($Separator)).Count - ($queue[0].split($Separator)).Count + 1
                         ElapsedSeconds = ($EndTime - $StartTime).TotalSeconds
+                        StartTime = $StartTime
                         FinishTime = $EndTime
                         # error info
                         Errors = $ErrorsFound
                         LastError = $LastError
+                        LastErrorItem = $LastErrorItem
                     }
                 
                 #
@@ -453,12 +479,23 @@ function Global:Get-FolderAge {
                             $OutputFile = $null
                         }
                     } else {
-                        try {
-                            $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -FilePath $OutputFile -Append -Encoding Unicode
-                            Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
-                        } catch {
-                            Write-Error "$FunctionName failed to append date to $OutputFile, entry for $Folder will be skipped.`n$_"
-                        }
+                        $Repeat = 5
+                        do {
+                            try {
+                                $RetVal | ConvertTo-Csv -NoTypeInformation | Select -Skip 1 | Out-File -FilePath $OutputFile -Append -Encoding Unicode
+                                Write-Verbose -Message "$(Get-Date -f T)   appended new line to output file $OutputFile"
+                                $Repeat = 0
+                            } catch {
+                                if ($_ -match 'because it is being used by another process') {
+                                    Write-Verbose -Message "$(Get-Date -f T)   appending data to output file $OutputFile failed, because file is in use, will retry in 100ms"
+                                    $Repeat--
+                                    Start-Sleep 100
+                                } else {
+                                    Write-Error "$FunctionName failed to append data to $OutputFile, entry for $Folder will be skipped.`n$_"
+                                    $Repeat = 0
+                                }
+                            }    
+                        } while ($Repeat -gt 0) 
                     }
                 }
                 # Return to pipeline
@@ -471,11 +508,16 @@ function Global:Get-FolderAge {
 
         # if threads, receive them
         if ($Threads -gt 1) {
-            Write-Verbose -Message "$(Get-Date -f T) $FunctionName waiting for background jobs results."
-            Receive-Job $JobList -Wait
-            Remove-Job $JobList
+            if ($JobList) {
+                Write-Verbose -Message "$(Get-Date -f T) $FunctionName waiting for background jobs results."
+                Receive-Job $JobList -Wait
+                Remove-Job $JobList
+            } else {
+                Write-Warning -Message "$(Get-Date -f T) $FunctionName have skipped all folders, please recheck results file $OutputFile"
+            }
+            Remove-Item "$OutputFile$ThreadsLock" -Force -ea 0    
         }
-
+        
         # function closing phase
         Write-Verbose -Message "$(Get-Date -f T) $FunctionName finished"
     }
