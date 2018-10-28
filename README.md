@@ -113,8 +113,8 @@ This is especially useful for long running scripts.
 
 Each commit or PR to master is checked on [Azure DevOps](https://azure.microsoft.com/en-us/services/devops/) [Pipelines](https://azure.microsoft.com/en-us/services/devops/pipelines/) on two build systems:
 
-1. Ubuntu **Linux** v.16.04 LTS running PowerShell (Core) v.6.1 [![Linux Build Status](https://dev.azure.com/iiric/GetFolderAge/_apis/build/status/GetFolderAge-Linux-CI)](https://dev.azure.com/iiric/GetFolderAge/_build/latest?definitionId=7)
-2. **Windows** Container running Windows PowerShell v.5.1 [![Windows Build Status](https://dev.azure.com/iiric/GetFolderAge/_apis/build/status/GetFolderAge-Win-CI)](https://dev.azure.com/iiric/GetFolderAge/_build/latest?definitionId=6)
+1. Ubuntu **Linux** v.16.04 LTS host running PowerShell (Core) v.6.1 [![Linux Build Status](https://dev.azure.com/iiric/GetFolderAge/_apis/build/status/GetFolderAge-Linux-CI)](https://dev.azure.com/iiric/GetFolderAge/_build/latest?definitionId=7)
+2. **Windows** host running Windows PowerShell v.5.1 [![Windows Build Status](https://dev.azure.com/iiric/GetFolderAge/_apis/build/status/GetFolderAge-Win-CI)](https://dev.azure.com/iiric/GetFolderAge/_build/latest?definitionId=6)
 
 ## Support
 
