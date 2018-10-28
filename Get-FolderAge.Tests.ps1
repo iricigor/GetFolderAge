@@ -184,7 +184,9 @@ Describe "Proper $CommandName Functionality" {
                 subst $LongPath ($LongFolder.FullName)
                 Get-PSDrive | Out-Null # just to rescan drives
             }
-            New-Item (Join-Path $LongPath $Name2) -ItemType Directory
+            $LongFile = New-Item (Join-Path $LongPath $Name2) -ItemType File
+            Start-Sleep -Seconds 2
+            'SomeText' | Out-File ($LongFile.FullName) -Append
             # run tests
             {Get-FolderAge -FolderName 'TestFolder'} | Should -Not -Throw
             $Result = Get-FolderAge -FolderName 'TestFolder'
