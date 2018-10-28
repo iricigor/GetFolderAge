@@ -1,6 +1,6 @@
 <#PSScriptInfo
 
-.VERSION 1.2
+.VERSION 1.2.1
 .GUID c9788cc2-d4af-4219-bf7d-8dd8fa89584f
 .AUTHOR Igor Iric, iricigor@gmail.com, https://github.com/iricigor
 .COMPANYNAME 
@@ -12,18 +12,10 @@
 .EXTERNALMODULEDEPENDENCIES 
 .REQUIREDSCRIPTS 
 .EXTERNALSCRIPTDEPENDENCIES 
-.RELEASENOTES Added restartable script functionality and alias, bug fixes for append and threads issues, for more info see https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
+.RELEASENOTES Reliability improvements https://github.com/iricigor/GetFolderAge/blob/master/ReleaseNotes.md
 .DESCRIPTION Get-FolderAge returns `LastModifiedDate` for a specified folder(s) and if folders were modified after a specified cut-off date.
 
 #>
-
-# class FolderAgeResult {
-
-#     [string]$Path
-#     [datetime]$LastWriteTime
-#     [Nullable[boolean]]$Modified
-
-# }
 
 function Global:Get-FolderAge {
 
