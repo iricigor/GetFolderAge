@@ -10,7 +10,7 @@ Date: Sunday, October 28, 2018
 
 - No new functionality
 
-#### Bug fixes in 1.2
+### Bug fixes in 1.2.1
 
 - Improved input/output file detection (i.e. folders, non-filesystem items, etc)
 - Further PowerShell v2 compatibility issues
@@ -27,7 +27,7 @@ Date: Wednesday, October 24, 2018
 - If interrupted, script can be restarted and it will skip already processed folders
 - Added function alias gfa for Get-FolderAge
 
-#### Bug fixes in 1.2
+### Bug fixes in 1.2
 
 - Threads not working properly together with OutputFile
 - PowerShell v2 compatibility issues
