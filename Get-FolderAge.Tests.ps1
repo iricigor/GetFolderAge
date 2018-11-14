@@ -140,7 +140,8 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Excludes requested folders' {
-        New-Item -Path 'TestFolder' -Name 'ExcludedFolder' -ItemType Directory -Force | Out-Null
+        New-Item -Path 'TestFolder' -Name 'ExcludedFolder1' -ItemType Directory -Force | Out-Null
+        New-Item -Path 'TestFolder' -Name 'ExcludedFolder2' -ItemType Directory -Force | Out-Null
         Start-Sleep 1
         New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder1') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null
         New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder2') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null

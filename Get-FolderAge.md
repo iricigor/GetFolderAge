@@ -70,7 +70,6 @@ Get-ChildItem -Input '10shares.txt' -Threads 5
 Gather information about 10 shares from input file, running 5 shares at the time.
 Requires ThreadJob module, which can be installed with Install-Module ThreadJob
 
-
 ### EXAMPLE 6
 
 ```
