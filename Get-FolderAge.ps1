@@ -102,7 +102,7 @@ function Global:Get-FolderAge {
     If this parameter is not specified, there will be no file output generated.
     
     .PARAMETER Exclude
-    Specifies, as a string array, an folder names that this cmdlet excludes in the search operation.
+    Specifies, as a string array, folder names that this cmdlet excludes in the search operation. Multiple names should be separated by commas. If folder name has space you must enclose it in apostrophes. Only exact folder names are excluded.
 
     .PARAMETER Threads
     If this parameter specifies number larger than 1, checks will be done in more than one thread.
