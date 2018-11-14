@@ -140,15 +140,17 @@ Describe "Proper $CommandName Functionality" {
     }
 
     It 'Excludes requested folders' {
-        New-Item -Path 'TestFolder' -Name 'ExcludedFolder' -ItemType Directory -Force | Out-Null
+        New-Item -Path 'TestFolder' -Name 'ExcludedFolder1' -ItemType Directory -Force | Out-Null
+        New-Item -Path 'TestFolder' -Name 'ExcludedFolder2' -ItemType Directory -Force | Out-Null
         Start-Sleep 1
-        New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null
+        New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder1') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null
+        New-Item -Path (Join-Path 'TestFolder' 'ExcludedFolder2') -Name 'ExcludedFile.txt' -ItemType File -Force | Out-Null
         $Result0 = Get-FolderAge -FolderName 'TestFolder'
-        $Result1 = Get-FolderAge -FolderName 'TestFolder' -Exclude 'ExcludedFolder'
+        $Result1 = Get-FolderAge -FolderName 'TestFolder' -Exclude 'ExcludedFolder1','ExcludedFolder2'
         # Last item can be either ExcludedFolder or  ExcludedFile.txt
         $Result0.LastItem | Should -Match 'ExcludedFolder' -Because "$($Result0.LastItem)"
         $Result1.LastItem | Should -Not -Match 'ExcludedFolder' -Because "$($Result1.LastItem)"
-        $Result0.TotalFiles - $Result1.TotalFiles | Should -Be 2
+        $Result0.TotalFiles - $Result1.TotalFiles | Should -Be 4
     }
 
     It 'Gives the same results if Threads are used' {

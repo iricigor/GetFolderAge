@@ -70,6 +70,14 @@ Get-ChildItem -Input '10shares.txt' -Threads 5
 Gather information about 10 shares from input file, running 5 shares at the time.
 Requires ThreadJob module, which can be installed with Install-Module ThreadJob
 
+### EXAMPLE 6
+
+```
+Get-FolderAge . -Exclude .git,img
+```
+
+This example can be executed on a clone of this repository. It will exclude mentioned two folders.
+
 ## PARAMETERS
 
 ### -FolderName
@@ -160,7 +168,7 @@ Accept wildcard characters: False
 ```
 
 ### -Exclude
-Specifies, as a string array, an folder names that this cmdlet excludes in the search operation.
+Specifies, as a string array, folder names that this cmdlet excludes in the search operation. Multiple names should be separated by commas. If folder name has space you must enclose it in apostrophes. Only exact folder names are excluded.
 
 ```yaml
 Type: String[]
